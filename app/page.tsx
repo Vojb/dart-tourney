@@ -191,10 +191,45 @@ export default function TournamentScheduler() {
   useEffect(() => {
     if (!isLoading) {
       const newTeamNames = [...teamNames];
+      const colorNames = [
+        "Blue",
+        "Red",
+        "Green",
+        "Orange",
+        "Purple",
+        "Teal",
+        "Yellow",
+        "Navy",
+        "Crimson",
+        "Emerald",
+        "Gold",
+        "Indigo",
+        "Pink",
+        "Sky",
+        "Lime",
+        "Coral",
+        "Violet",
+        "Mint",
+        "Amber",
+        "Slate",
+        "Rose",
+        "Cyan",
+        "Olive",
+        "Maroon",
+        "Turquoise",
+        "Magenta",
+        "Silver",
+        "Bronze",
+        "Ruby",
+        "Sapphire",
+        "Jade",
+        "Amber",
+      ];
 
       // Add new teams if needed
       while (newTeamNames.length < numTeams) {
-        newTeamNames.push(`Team ${newTeamNames.length + 1}`);
+        const index = newTeamNames.length;
+        newTeamNames.push(colorNames[index % colorNames.length]);
       }
 
       // Remove teams if needed
@@ -376,7 +411,7 @@ export default function TournamentScheduler() {
   };
 
   // Generate a vibrant team color with better contrast
-  const generateRandomColor = () => {
+  const generateRandomColor = (usedColors: string[]) => {
     // Use a predefined set of vibrant colors with good contrast
     const vibrantColors = [
       "#3498db", // Blue
@@ -386,7 +421,6 @@ export default function TournamentScheduler() {
       "#9b59b6", // Purple
       "#1abc9c", // Teal
       "#f1c40f", // Yellow
-      "#e67e22", // Dark Orange
       "#34495e", // Navy Blue
       "#16a085", // Dark Teal
       "#d35400", // Burnt Orange
@@ -404,9 +438,6 @@ export default function TournamentScheduler() {
       "#7158e2", // Indigo
       "#3742fa", // Royal Blue
     ];
-
-    // Get currently used colors
-    const usedColors = Object.values(teamColors);
 
     // Find unused colors
     const unusedColors = vibrantColors.filter(
@@ -426,51 +457,177 @@ export default function TournamentScheduler() {
     const g = parseInt(baseColor.slice(3, 5), 16);
     const b = parseInt(baseColor.slice(5, 7), 16);
 
-    // Generate a slight variation
-    const variation = 30; // Color variation amount
-    const newR = Math.max(
-      0,
-      Math.min(255, r + Math.floor(Math.random() * variation * 2) - variation)
-    );
-    const newG = Math.max(
-      0,
-      Math.min(255, g + Math.floor(Math.random() * variation * 2) - variation)
-    );
-    const newB = Math.max(
-      0,
-      Math.min(255, b + Math.floor(Math.random() * variation * 2) - variation)
-    );
+    // Generate a variation until we find one that's not already used
+    let newColor;
+    do {
+      const variation = 30; // Color variation amount
+      const newR = Math.max(
+        0,
+        Math.min(255, r + Math.floor(Math.random() * variation * 2) - variation)
+      );
+      const newG = Math.max(
+        0,
+        Math.min(255, g + Math.floor(Math.random() * variation * 2) - variation)
+      );
+      const newB = Math.max(
+        0,
+        Math.min(255, b + Math.floor(Math.random() * variation * 2) - variation)
+      );
 
-    return `#${newR.toString(16).padStart(2, "0")}${newG
-      .toString(16)
-      .padStart(2, "0")}${newB.toString(16).padStart(2, "0")}`;
+      newColor = `#${newR.toString(16).padStart(2, "0")}${newG
+        .toString(16)
+        .padStart(2, "0")}${newB.toString(16).padStart(2, "0")}`;
+    } while (usedColors.includes(newColor));
+
+    return newColor;
   };
 
   const generateTournament = () => {
+    // Define color-to-name mapping with expanded color options
+    const colorToNameMap: { [key: string]: string } = {
+      "#3498db": "Blue",
+      "#e74c3c": "Red",
+      "#2ecc71": "Green",
+      "#f39c12": "Orange",
+      "#9b59b6": "Purple",
+      "#1abc9c": "Teal",
+      "#f1c40f": "Yellow",
+      "#34495e": "Navy",
+      "#16a085": "Dark Teal",
+      "#d35400": "Burnt Orange",
+      "#c0392b": "Dark Red",
+      "#8e44ad": "Dark Purple",
+      "#27ae60": "Dark Green",
+      "#2980b9": "Ocean Blue",
+      "#ff6b81": "Pink",
+      "#5352ed": "Bright Blue",
+      "#ff4757": "Bright Red",
+      "#7bed9f": "Light Green",
+      "#70a1ff": "Sky Blue",
+      "#a4b0be": "Gray",
+      "#ff6348": "Coral",
+      "#7158e2": "Indigo",
+      "#3742fa": "Royal Blue",
+    };
+
+    // Function to find closest color name for any hex color
+    const getColorName = (hexColor: string): string => {
+      // If exact match exists, use it
+      if (colorToNameMap[hexColor]) {
+        return colorToNameMap[hexColor];
+      }
+
+      // Parse the hex color
+      const r = parseInt(hexColor.slice(1, 3), 16);
+      const g = parseInt(hexColor.slice(3, 5), 16);
+      const b = parseInt(hexColor.slice(5, 7), 16);
+
+      // Find dominant color component
+      const max = Math.max(r, g, b);
+      let colorName = "Black";
+
+      if (max > 200) {
+        if (r > g && r > b) colorName = "Red";
+        else if (g > r && g > b) colorName = "Green";
+        else if (b > r && b > g) colorName = "Blue";
+        else if (r > 200 && g > 200 && b < 100) colorName = "Yellow";
+        else if (r > 200 && b > 200 && g < 100) colorName = "Purple";
+        else if (g > 200 && b > 200 && r < 100) colorName = "Cyan";
+        else if (r > 200 && g > 200 && b > 200) colorName = "White";
+      } else if (max > 150) {
+        if (r > g && r > b) colorName = "Dark Red";
+        else if (g > r && g > b) colorName = "Dark Green";
+        else if (b > r && b > g) colorName = "Dark Blue";
+        else if (r > 150 && g > 150 && b < 100) colorName = "Gold";
+        else if (r > 150 && b > 150 && g < 100) colorName = "Violet";
+        else if (g > 150 && b > 150 && r < 100) colorName = "Teal";
+        else colorName = "Silver";
+      } else if (max > 100) {
+        if (r > g && r > b) colorName = "Brown";
+        else if (g > r && g > b) colorName = "Olive";
+        else if (b > r && b > g) colorName = "Navy";
+        else colorName = "Gray";
+      }
+
+      return colorName;
+    };
+
     // Create teams array using custom team names
     const teams = [...teamNames];
 
-    // Generate colors for teams
+    // Track all assigned colors and names to ensure uniqueness
+    const usedColors: string[] = [];
+    const usedNames: string[] = [];
     const colors: { [key: string]: string } = {};
+
     // First, preserve any existing colors
-    const existingColorCount = Object.keys(teamColors).length;
     teams.forEach((team) => {
       if (teamColors[team]) {
         colors[team] = teamColors[team];
+        usedColors.push(teamColors[team]);
+        usedNames.push(team);
       }
     });
 
-    // Then assign new colors to teams that don't have one yet
-    teams.forEach((team) => {
+    // Process teams in multiple passes:
+    // 1. First assign unique colors to all teams
+    // 2. Then rename teams based on their colors ensuring unique names
+
+    // First pass: assign colors to all teams
+    teams.forEach((team, index) => {
       if (!colors[team]) {
-        colors[team] = generateRandomColor();
+        const color = generateRandomColor(usedColors);
+        colors[team] = color;
+        usedColors.push(color);
       }
     });
 
+    // Second pass: rename teams based on their colors
+    const updatedTeams = [...teams];
+
+    // Create a map to count occurrences of each color
+    const colorCounts: { [colorName: string]: number } = {};
+
+    teams.forEach((team, index) => {
+      const color = colors[team];
+
+      // Get base color name using the enhanced function
+      let colorName = getColorName(color);
+
+      // Count how many times this color has appeared
+      if (!colorCounts[colorName]) {
+        colorCounts[colorName] = 1;
+      } else {
+        colorCounts[colorName]++;
+      }
+
+      // Determine the new name based on color count
+      let newName = colorName;
+      if (colorCounts[colorName] > 1) {
+        newName = `${colorName} ${colorCounts[colorName]}`;
+      }
+
+      // Update the team name
+      updatedTeams[index] = newName;
+
+      // Update the color assignment
+      if (newName !== team) {
+        colors[newName] = color;
+        delete colors[team];
+
+        // Add to used names list
+        if (!usedNames.includes(newName)) {
+          usedNames.push(newName);
+        }
+      }
+    });
+
+    // Update team names and colors
+    setTeamNames(updatedTeams);
     setTeamColors(colors);
 
     // Use specified numGroups instead of calculating it
-    const groups = createGroups(teams, numGroups);
+    const groups = createGroups(updatedTeams, numGroups);
 
     // Generate all matches for each group
     const allGroupMatches: Match[] = [];
@@ -500,7 +657,7 @@ export default function TournamentScheduler() {
 
     // Track when each team last played (by time slot index)
     const teamLastPlayed: Record<string, number> = {};
-    teams.forEach((team) => {
+    updatedTeams.forEach((team) => {
       teamLastPlayed[team] = -1; // -1 means never played yet
     });
 
@@ -1236,8 +1393,8 @@ export default function TournamentScheduler() {
         className="w-full max-w-4xl mx-auto"
       >
         <TabsList
-          className="flex w-full overflow-x-auto no-scrollbar gap-1 sm:grid sm:grid-cols-5 sm:gap-2"
-          style={{ WebkitOverflowScrolling: "touch" }}
+          className="flex w-full overflow-x-auto no-scrollbar gap-1 sm:grid sm:grid-cols-5 sm:gap-2 h-auto"
+          style={{ WebkitOverflowScrolling: "touch", overflowY: "hidden" }}
         >
           <TabsTrigger
             value="setup"
