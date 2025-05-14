@@ -118,12 +118,13 @@ export function MatchCard({
       <CardContent>
         {/* Collapsed view - only team names and scores */}
         <div
-          className="flex items-center justify-between cursor-pointer"
+          className="grid grid-cols-[1fr_auto_1fr_auto] items-center cursor-pointer"
           onClick={toggleExpanded}
         >
-          <div className="flex items-center space-x-2">
+          {/* Team 1 with fixed width and truncation */}
+          <div className="flex items-center space-x-2 min-w-0 pr-2">
             <div
-              className="w-4 h-4 rounded-full"
+              className="min-w-4 w-4 h-4 rounded-full flex-shrink-0"
               style={{
                 backgroundColor: teamColors[match.team1] || "#ccc",
               }}
@@ -131,35 +132,40 @@ export function MatchCard({
             <span
               className={`${
                 compact ? "text-xs sm:text-sm" : "text-sm sm:text-base"
-              } font-medium`}
+              } font-medium truncate`}
+              title={match.team1}
             >
               {match.team1}
             </span>
           </div>
 
-          <div className="flex items-center space-x-1">
+          {/* Score section with fixed width */}
+          <div className="flex items-center justify-center px-2 w-16">
             <span className="font-bold">{match.score1 || 0}</span>
             <span className="mx-1">-</span>
             <span className="font-bold">{match.score2 || 0}</span>
           </div>
 
-          <div className="flex items-center space-x-2">
+          {/* Team 2 with fixed width and truncation */}
+          <div className="flex items-center justify-end space-x-2 min-w-0 pl-2">
             <span
               className={`${
                 compact ? "text-xs sm:text-sm" : "text-sm sm:text-base"
-              } font-medium`}
+              } font-medium truncate text-right`}
+              title={match.team2}
             >
               {match.team2}
             </span>
             <div
-              className="w-4 h-4 rounded-full"
+              className="min-w-4 w-4 h-4 rounded-full flex-shrink-0"
               style={{
                 backgroundColor: teamColors[match.team2] || "#ccc",
               }}
             />
           </div>
 
-          <div className="ml-2">
+          {/* Toggle icon */}
+          <div className="ml-1 flex-shrink-0">
             {expanded ? (
               <ChevronUp className="w-4 h-4" />
             ) : (
@@ -180,7 +186,12 @@ export function MatchCard({
                   color: getContrastColor(teamColors[match.team1] || "#ccc"),
                 }}
               >
-                <span className="font-medium">{match.team1}</span>
+                <span
+                  className="font-medium truncate max-w-[50%]"
+                  title={match.team1}
+                >
+                  {match.team1}
+                </span>
                 <div className="flex items-center space-x-3">
                   <Button
                     variant="ghost"
@@ -221,7 +232,12 @@ export function MatchCard({
                   color: getContrastColor(teamColors[match.team2] || "#ccc"),
                 }}
               >
-                <span className="font-medium">{match.team2}</span>
+                <span
+                  className="font-medium truncate max-w-[50%]"
+                  title={match.team2}
+                >
+                  {match.team2}
+                </span>
                 <div className="flex items-center space-x-3">
                   <Button
                     variant="ghost"
