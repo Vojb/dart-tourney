@@ -1,86 +1,153 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Clock, Users, Target, Trophy, Save, Trash2, Edit, Check, Medal } from "lucide-react"
-import { Badge } from "@/components/ui/badge"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
-import { toast } from "@/components/ui/use-toast"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Clock,
+  Users,
+  Target,
+  Trophy,
+  Save,
+  Trash2,
+  Edit,
+  Check,
+  Medal,
+  Pencil,
+} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { toast } from "@/components/ui/use-toast";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+// Add types for tournament and matches
+
+type Match = {
+  id: number;
+  group?: number;
+  round?: number;
+  team1: string;
+  team2: string;
+  time: string;
+  board: number;
+  score1: number | null;
+  score2: number | null;
+  completed: boolean;
+  winner?: string | null;
+  nextMatchId?: number | null;
+  nextMatchPosition?: string;
+};
+
+type Tournament = {
+  groups: string[][];
+  matches: Match[];
+};
 
 export default function TournamentScheduler() {
-  const [numTeams, setNumTeams] = useState(8)
-  const [numBoards, setNumBoards] = useState(2)
-  const [matchDuration, setMatchDuration] = useState(15)
-  const [startTime, setStartTime] = useState("09:00")
-  const [tournament, setTournament] = useState(null)
-  const [activeTab, setActiveTab] = useState("setup")
-  const [teamColors, setTeamColors] = useState({})
-  const [selectedMatch, setSelectedMatch] = useState(null)
-  const [score1, setScore1] = useState("")
-  const [score2, setScore2] = useState("")
-  const [isLoading, setIsLoading] = useState(true)
-  const [teamNames, setTeamNames] = useState([])
-  const [editingTeamIndex, setEditingTeamIndex] = useState(null)
-  const [editingTeamName, setEditingTeamName] = useState("")
-  const [showTeamNameDialog, setShowTeamNameDialog] = useState(false)
-  const [selectedTeam, setSelectedTeam] = useState(null)
-  const [teamsAdvancing, setTeamsAdvancing] = useState(2)
-  const [knockoutMatches, setKnockoutMatches] = useState([])
-  const [knockoutStartTime, setKnockoutStartTime] = useState("")
+  const [numTeams, setNumTeams] = useState(8);
+  const [numBoards, setNumBoards] = useState(2);
+  const [matchDuration, setMatchDuration] = useState(15);
+  const [startTime, setStartTime] = useState("09:00");
+  const [tournament, setTournament] = useState<Tournament | null>(null);
+  const [activeTab, setActiveTab] = useState("setup");
+  const [teamColors, setTeamColors] = useState<{ [key: string]: string }>({});
+  const [selectedMatch, setSelectedMatch] = useState<
+    (Match & { isKnockout?: boolean }) | null
+  >(null);
+  const [score1, setScore1] = useState("");
+  const [score2, setScore2] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+  const [teamNames, setTeamNames] = useState<string[]>([]);
+  const [editingTeamIndex, setEditingTeamIndex] = useState(null);
+  const [editingTeamName, setEditingTeamName] = useState("");
+  const [showTeamNameDialog, setShowTeamNameDialog] = useState(false);
+  const [selectedTeam, setSelectedTeam] = useState<string | null>(null);
+  const [teamsAdvancing, setTeamsAdvancing] = useState(2);
+  const [knockoutMatches, setKnockoutMatches] = useState<Match[]>([]);
+  const [knockoutStartTime, setKnockoutStartTime] = useState("");
+  const [matchView, setMatchView] = useState<"list" | "boardGrid">("list");
+  const [tournamentName, setTournamentName] = useState(
+    "Dart Tournament Scheduler"
+  );
 
   // Load data from local storage on component mount
   useEffect(() => {
     const loadSavedData = () => {
       try {
         // Load tournament data
-        const savedTournament = localStorage.getItem("dartTournament")
+        const savedTournament = localStorage.getItem("dartTournament");
         if (savedTournament) {
-          setTournament(JSON.parse(savedTournament))
+          setTournament(JSON.parse(savedTournament));
+        }
+
+        // Load tournament name
+        const savedTournamentName = localStorage.getItem("dartTournamentName");
+        if (savedTournamentName) {
+          setTournamentName(savedTournamentName);
         }
 
         // Load team colors
-        const savedColors = localStorage.getItem("dartTournamentColors")
+        const savedColors = localStorage.getItem("dartTournamentColors");
         if (savedColors) {
-          setTeamColors(JSON.parse(savedColors))
+          setTeamColors(JSON.parse(savedColors));
         }
 
         // Load knockout matches
-        const savedKnockout = localStorage.getItem("dartTournamentKnockout")
+        const savedKnockout = localStorage.getItem("dartTournamentKnockout");
         if (savedKnockout) {
-          setKnockoutMatches(JSON.parse(savedKnockout))
+          setKnockoutMatches(JSON.parse(savedKnockout));
         }
 
         // Load active tab
-        const savedTab = localStorage.getItem("dartTournamentTab")
+        const savedTab = localStorage.getItem("dartTournamentTab");
         if (savedTab) {
-          setActiveTab(savedTab)
+          setActiveTab(savedTab);
         }
 
         // Load settings
-        const savedSettings = localStorage.getItem("dartTournamentSettings")
+        const savedSettings = localStorage.getItem("dartTournamentSettings");
         if (savedSettings) {
-          const settings = JSON.parse(savedSettings)
-          setNumTeams(settings.numTeams)
-          setNumBoards(settings.numBoards)
-          setMatchDuration(settings.matchDuration)
-          setStartTime(settings.startTime)
-          setTeamsAdvancing(settings.teamsAdvancing || 2)
+          const settings = JSON.parse(savedSettings);
+          setNumTeams(settings.numTeams);
+          setNumBoards(settings.numBoards);
+          setMatchDuration(settings.matchDuration);
+          setStartTime(settings.startTime);
+          setTeamsAdvancing(settings.teamsAdvancing || 2);
         }
 
         // Load team names
-        const savedTeamNames = localStorage.getItem("dartTournamentTeamNames")
+        const savedTeamNames = localStorage.getItem("dartTournamentTeamNames");
         if (savedTeamNames) {
-          setTeamNames(JSON.parse(savedTeamNames))
+          setTeamNames(JSON.parse(savedTeamNames));
         } else {
           // Initialize with default team names
-          setTeamNames(Array.from({ length: numTeams }, (_, i) => `Team ${i + 1}`))
+          setTeamNames(
+            Array.from({ length: numTeams }, (_, i) => `Team ${i + 1}`)
+          );
         }
 
         // Show toast if data was loaded
@@ -88,88 +155,98 @@ export default function TournamentScheduler() {
           toast({
             title: "Tournament data loaded",
             description: "Your saved tournament has been restored.",
-          })
+          });
         }
       } catch (error) {
-        console.error("Error loading saved data:", error)
+        console.error("Error loading saved data:", error);
         toast({
           variant: "destructive",
           title: "Error loading data",
           description: "There was a problem loading your saved tournament.",
-        })
+        });
       } finally {
-        setIsLoading(false)
+        setIsLoading(false);
       }
-    }
+    };
 
-    loadSavedData()
-  }, [])
+    loadSavedData();
+  }, []);
 
   // Calculate and set knockout start time when group matches are generated
   useEffect(() => {
     if (tournament && tournament.matches.length > 0) {
-      const matches = tournament.matches
+      const matches = tournament.matches;
       const lastMatch = [...matches].sort(
-        (a, b) => parseTime(a.time) + matchDuration * 60000 - (parseTime(b.time) + matchDuration * 60000),
-      )[matches.length - 1]
+        (a, b) =>
+          parseTime(a.time) +
+          matchDuration * 60000 -
+          (parseTime(b.time) + matchDuration * 60000)
+      )[matches.length - 1];
 
-      const lastMatchEndTime = parseTime(lastMatch.time) + matchDuration * 60000
-      const knockoutTime = new Date(lastMatchEndTime + 30 * 60000) // 30 minutes after last group match
-      setKnockoutStartTime(formatTime(knockoutTime.getTime()))
+      const lastMatchEndTime =
+        parseTime(lastMatch.time) + matchDuration * 60000;
+      const knockoutTime = new Date(lastMatchEndTime + 30 * 60000); // 30 minutes after last group match
+      setKnockoutStartTime(formatTime(knockoutTime.getTime()));
     }
-  }, [tournament, matchDuration])
+  }, [tournament, matchDuration]);
 
   // Update team names when numTeams changes
   useEffect(() => {
     if (!isLoading) {
-      const newTeamNames = [...teamNames]
+      const newTeamNames = [...teamNames];
 
       // Add new teams if needed
       while (newTeamNames.length < numTeams) {
-        newTeamNames.push(`Team ${newTeamNames.length + 1}`)
+        newTeamNames.push(`Team ${newTeamNames.length + 1}`);
       }
 
       // Remove teams if needed
       while (newTeamNames.length > numTeams) {
-        newTeamNames.pop()
+        newTeamNames.pop();
       }
 
-      setTeamNames(newTeamNames)
+      setTeamNames(newTeamNames);
     }
-  }, [numTeams, isLoading])
+  }, [numTeams, isLoading]);
 
   // Save team names to local storage
   useEffect(() => {
     if (!isLoading && teamNames.length > 0) {
-      localStorage.setItem("dartTournamentTeamNames", JSON.stringify(teamNames))
+      localStorage.setItem(
+        "dartTournamentTeamNames",
+        JSON.stringify(teamNames)
+      );
     }
-  }, [teamNames, isLoading])
+  }, [teamNames, isLoading]);
 
   // Save tournament data to local storage whenever it changes
   useEffect(() => {
     if (tournament) {
-      localStorage.setItem("dartTournament", JSON.stringify(tournament))
+      localStorage.setItem("dartTournament", JSON.stringify(tournament));
     }
-  }, [tournament])
+  }, [tournament]);
 
   // Save knockout matches to local storage
   useEffect(() => {
     if (knockoutMatches.length > 0) {
-      localStorage.setItem("dartTournamentKnockout", JSON.stringify(knockoutMatches))
+      localStorage.setItem(
+        "dartTournamentKnockout",
+        JSON.stringify(knockoutMatches)
+      );
     }
-  }, [knockoutMatches])
+  }, [knockoutMatches]);
 
   // Save team colors whenever they change
   useEffect(() => {
     if (Object.keys(teamColors).length > 0) {
-      localStorage.setItem("dartTournamentColors", JSON.stringify(teamColors))
+      localStorage.setItem("dartTournamentColors", JSON.stringify(teamColors));
     }
-  }, [teamColors])
+  }, [teamColors]);
 
   // Save active tab whenever it changes
   useEffect(() => {
-    localStorage.setItem("dartTournamentTab", activeTab)
-  }, [activeTab])
+    localStorage.setItem("dartTournamentTab", activeTab);
+  }, [activeTab]);
 
   // Save settings whenever they change
   useEffect(() => {
@@ -179,63 +256,69 @@ export default function TournamentScheduler() {
       matchDuration,
       startTime,
       teamsAdvancing,
-    }
-    localStorage.setItem("dartTournamentSettings", JSON.stringify(settings))
-  }, [numTeams, numBoards, matchDuration, startTime, teamsAdvancing])
+    };
+    localStorage.setItem("dartTournamentSettings", JSON.stringify(settings));
+  }, [numTeams, numBoards, matchDuration, startTime, teamsAdvancing]);
+
+  // Save tournament name whenever it changes
+  useEffect(() => {
+    localStorage.setItem("dartTournamentName", tournamentName);
+  }, [tournamentName]);
 
   // Clear all saved data
   const clearSavedData = () => {
-    localStorage.removeItem("dartTournament")
-    localStorage.removeItem("dartTournamentColors")
-    localStorage.removeItem("dartTournamentTab")
-    localStorage.removeItem("dartTournamentSettings")
-    localStorage.removeItem("dartTournamentTeamNames")
-    localStorage.removeItem("dartTournamentKnockout")
+    localStorage.removeItem("dartTournament");
+    localStorage.removeItem("dartTournamentColors");
+    localStorage.removeItem("dartTournamentTab");
+    localStorage.removeItem("dartTournamentSettings");
+    localStorage.removeItem("dartTournamentTeamNames");
+    localStorage.removeItem("dartTournamentKnockout");
 
-    setTournament(null)
-    setTeamColors({})
-    setActiveTab("setup")
-    setTeamNames(Array.from({ length: numTeams }, (_, i) => `Team ${i + 1}`))
-    setKnockoutMatches([])
+    setTournament(null);
+    setTeamColors({});
+    setActiveTab("setup");
+    setTeamNames(Array.from({ length: numTeams }, (_, i) => `Team ${i + 1}`));
+    setKnockoutMatches([]);
 
     toast({
       title: "Tournament data cleared",
       description: "All saved tournament data has been removed.",
-    })
-  }
+    });
+  };
 
   // Handle team name change
-  const handleTeamNameChange = (index, newName) => {
-    const updatedTeamNames = [...teamNames]
-    const oldName = updatedTeamNames[index]
-    updatedTeamNames[index] = newName
-    setTeamNames(updatedTeamNames)
+  const handleTeamNameChange = (index: number, newName: string) => {
+    const updatedTeamNames = [...teamNames];
+    const oldName = updatedTeamNames[index];
+    updatedTeamNames[index] = newName;
+    setTeamNames(updatedTeamNames);
 
     // If tournament exists, update all references to this team
     if (tournament) {
       // Update team colors
-      const updatedColors = { ...teamColors }
+      const updatedColors = { ...teamColors };
       if (updatedColors[oldName]) {
-        updatedColors[newName] = updatedColors[oldName]
-        delete updatedColors[oldName]
-        setTeamColors(updatedColors)
+        updatedColors[newName] = updatedColors[oldName];
+        delete updatedColors[oldName];
+        setTeamColors(updatedColors);
       }
 
       // Update tournament groups
-      const updatedGroups = tournament.groups.map((group) => group.map((team) => (team === oldName ? newName : team)))
+      const updatedGroups = tournament.groups.map((group) =>
+        group.map((team) => (team === oldName ? newName : team))
+      );
 
       // Update matches
       const updatedMatches = tournament.matches.map((match) => ({
         ...match,
         team1: match.team1 === oldName ? newName : match.team1,
         team2: match.team2 === oldName ? newName : match.team2,
-      }))
+      }));
 
       setTournament({
-        ...tournament,
         groups: updatedGroups,
         matches: updatedMatches,
-      })
+      });
 
       // Update knockout matches if necessary
       if (knockoutMatches.length > 0) {
@@ -243,138 +326,151 @@ export default function TournamentScheduler() {
           ...match,
           team1: match.team1 === oldName ? newName : match.team1,
           team2: match.team2 === oldName ? newName : match.team2,
-        }))
-        setKnockoutMatches(updatedKnockout)
+        }));
+        setKnockoutMatches(updatedKnockout);
       }
     }
-  }
+  };
 
   // Open team name edit dialog
-  const openTeamNameDialog = (team) => {
-    setSelectedTeam(team)
-    setEditingTeamName(team)
-    setShowTeamNameDialog(true)
-  }
+  const openTeamNameDialog = (team: string) => {
+    setSelectedTeam(team);
+    setEditingTeamName(team);
+    setShowTeamNameDialog(true);
+  };
 
   // Save edited team name
   const saveTeamName = () => {
-    if (!selectedTeam || !editingTeamName.trim()) return
+    if (!selectedTeam || !editingTeamName.trim()) return;
 
     // Find the team in the tournament
-    let teamIndex = -1
+    let teamIndex = -1;
     if (tournament) {
       tournament.groups.forEach((group) => {
-        const index = group.findIndex((team) => team === selectedTeam)
+        const index = group.findIndex((team) => team === selectedTeam);
         if (index !== -1) {
-          teamIndex = teamNames.findIndex((name) => name === selectedTeam)
+          teamIndex = teamNames.findIndex((name) => name === selectedTeam);
         }
-      })
+      });
     } else {
-      teamIndex = teamNames.findIndex((name) => name === selectedTeam)
+      teamIndex = teamNames.findIndex((name) => name === selectedTeam);
     }
 
     if (teamIndex !== -1) {
-      handleTeamNameChange(teamIndex, editingTeamName.trim())
+      handleTeamNameChange(teamIndex, editingTeamName.trim());
 
       toast({
         title: "Team name updated",
         description: `"${selectedTeam}" has been renamed to "${editingTeamName.trim()}"`,
-      })
+      });
     }
 
-    setShowTeamNameDialog(false)
-    setSelectedTeam(null)
-    setEditingTeamName("")
-  }
+    setShowTeamNameDialog(false);
+    setSelectedTeam(null);
+    setEditingTeamName("");
+  };
 
   // Generate a random pastel color
   const generateRandomColor = () => {
     // Generate pastel colors for better visibility
-    const hue = Math.floor(Math.random() * 360)
-    return `hsl(${hue}, 70%, 80%)`
-  }
+    const hue = Math.floor(Math.random() * 360);
+    return `hsl(${hue}, 70%, 80%)`;
+  };
 
   const generateTournament = () => {
     // Create teams array using custom team names
-    const teams = [...teamNames]
+    const teams = [...teamNames];
 
     // Generate colors for teams
-    const colors = {}
+    const colors = {};
     teams.forEach((team) => {
       // Keep existing colors if available
-      colors[team] = teamColors[team] || generateRandomColor()
-    })
-    setTeamColors(colors)
+      colors[team] = teamColors[team] || generateRandomColor();
+    });
+    setTeamColors(colors);
 
     // Calculate optimal group size based on number of teams and boards
-    const numGroups = Math.min(numBoards, Math.ceil(numTeams / 4))
-    const groups = createGroups(teams, numGroups)
+    const numGroups = Math.min(numBoards, Math.ceil(numTeams / 4));
+    const groups = createGroups(teams, numGroups);
 
     // Generate all matches for each group
-    const allGroupMatches = []
+    const allGroupMatches: Match[] = [];
     groups.forEach((group, groupIndex) => {
-      const groupMatches = generateRoundRobinMatches(group)
+      const groupMatches = generateRoundRobinMatches(group);
       groupMatches.forEach((match) => {
         allGroupMatches.push({
           ...match,
           group: groupIndex + 1,
-        })
-      })
-    })
+          id: 0, // placeholder, will be set later
+          time: "",
+          board: 0,
+          score1: null,
+          score2: null,
+          completed: false,
+          team1: match.team1 || "",
+          team2: match.team2 || "",
+        });
+      });
+    });
 
     // Schedule matches ensuring no team plays twice at the same time
     // and avoiding consecutive matches for teams when possible
-    const matches = []
-    let currentTime = parseTime(startTime)
-    let currentTimeSlot = 0
+    const matches = [];
+    let currentTime = parseTime(startTime);
+    let currentTimeSlot = 0;
 
     // Track when each team last played (by time slot index)
-    const teamLastPlayed = {}
+    const teamLastPlayed: Record<string, number> = {};
     teams.forEach((team) => {
-      teamLastPlayed[team] = -1 // -1 means never played yet
-    })
+      teamLastPlayed[team] = -1; // -1 means never played yet
+    });
 
     while (allGroupMatches.length > 0) {
-      const timeSlotTeams = new Set() // Teams playing in current time slot
-      let boardsUsedInTimeSlot = 0
-      let matchScheduledInThisTimeSlot = false
+      const timeSlotTeams = new Set(); // Teams playing in current time slot
+      let boardsUsedInTimeSlot = 0;
+      let matchScheduledInThisTimeSlot = false;
 
       // Try to schedule matches for all available boards in this time slot
       while (boardsUsedInTimeSlot < numBoards && allGroupMatches.length > 0) {
         // Score each potential match based on how long since teams last played
         const scoredMatches = allGroupMatches.map((match, index) => {
           // Skip if either team is already playing in this time slot
-          if (timeSlotTeams.has(match.team1) || timeSlotTeams.has(match.team2)) {
-            return { index, score: -1 } // Not eligible
+          if (
+            timeSlotTeams.has(match.team1) ||
+            timeSlotTeams.has(match.team2)
+          ) {
+            return { index, score: -1 }; // Not eligible
           }
 
           // Calculate rest score - higher is better (more rest time)
           // If a team played in the previous time slot, we want to avoid scheduling them if possible
-          const team1RestScore = currentTimeSlot - teamLastPlayed[match.team1]
-          const team2RestScore = currentTimeSlot - teamLastPlayed[match.team2]
+          const team1RestScore = currentTimeSlot - teamLastPlayed[match.team1];
+          const team2RestScore = currentTimeSlot - teamLastPlayed[match.team2];
 
           // Prioritize matches where both teams have had some rest
           // Lower score means one or both teams played recently
-          const minRestScore = Math.min(team1RestScore, team2RestScore)
+          const minRestScore = Math.min(team1RestScore, team2RestScore);
 
-          return { index, score: minRestScore }
-        })
+          return { index, score: minRestScore };
+        });
 
         // Filter out ineligible matches and sort by score (higher is better)
-        const eligibleMatches = scoredMatches.filter((m) => m.score >= 0).sort((a, b) => b.score - a.score)
+        const eligibleMatches = scoredMatches
+          .filter((m) => m.score >= 0)
+          .sort((a, b) => b.score - a.score);
 
         if (eligibleMatches.length > 0) {
           // Take the best match (teams with most rest time)
-          const bestMatchIndex = eligibleMatches[0].index
-          const match = allGroupMatches.splice(bestMatchIndex, 1)[0]
+          const bestMatchIndex = eligibleMatches[0].index;
+          const match = allGroupMatches.splice(bestMatchIndex, 1)[0];
 
           // Add teams to the current time slot
-          timeSlotTeams.add(match.team1)
-          timeSlotTeams.add(match.team2)
+          timeSlotTeams.add(match.team1);
+          timeSlotTeams.add(match.team2);
 
           // Update when these teams last played
-          teamLastPlayed[match.team1] = currentTimeSlot
-          teamLastPlayed[match.team2] = currentTimeSlot
+          teamLastPlayed[match.team1] = currentTimeSlot;
+          teamLastPlayed[match.team2] = currentTimeSlot;
 
           // Add match to schedule
           matches.push({
@@ -385,88 +481,95 @@ export default function TournamentScheduler() {
             score1: null,
             score2: null,
             completed: false,
-          })
+            team1: match.team1 || "",
+            team2: match.team2 || "",
+          });
 
-          boardsUsedInTimeSlot++
-          matchScheduledInThisTimeSlot = true
+          boardsUsedInTimeSlot++;
+          matchScheduledInThisTimeSlot = true;
         } else {
           // No eligible matches for this time slot
-          break
+          break;
         }
       }
 
       // If we couldn't schedule any matches in this time slot, or all boards are used,
       // move to the next time slot
-      if (!matchScheduledInThisTimeSlot || boardsUsedInTimeSlot >= numBoards || allGroupMatches.length === 0) {
-        currentTime += matchDuration * 60 * 1000
-        currentTimeSlot++
+      if (
+        !matchScheduledInThisTimeSlot ||
+        boardsUsedInTimeSlot >= numBoards ||
+        allGroupMatches.length === 0
+      ) {
+        currentTime += matchDuration * 60 * 1000;
+        currentTimeSlot++;
       }
     }
 
     // Sort matches by time for the schedule view
     const sortedMatches = [...matches].sort((a, b) => {
       if (a.time === b.time) {
-        return a.board - b.board
+        return a.board - b.board;
       }
-      return parseTime(a.time) - parseTime(b.time)
-    })
+      return parseTime(a.time) - parseTime(b.time);
+    });
 
     // Clear any existing knockout matches
-    setKnockoutMatches([])
+    setKnockoutMatches([]);
 
-    const newTournament = { groups, matches: sortedMatches }
-    setTournament(newTournament)
-    setActiveTab("schedule")
+    const newTournament = { groups, matches: sortedMatches };
+    setTournament(newTournament);
+    setActiveTab("schedule");
 
     toast({
       title: "Tournament generated",
       description: `Created a tournament with ${numTeams} teams and ${numBoards} dartboards.`,
-    })
-  }
+    });
+  };
 
-  const createGroups = (teams, numGroups) => {
-    const groups = Array.from({ length: numGroups }, () => [])
+  const createGroups = (teams: string[], numGroups: number): string[][] => {
+    const groups: string[][] = Array.from({ length: numGroups }, () => []);
     teams.forEach((team, index) => {
-      groups[index % numGroups].push(team)
-    })
-    return groups
-  }
+      groups[index % numGroups].push(team);
+    });
+    return groups;
+  };
 
-  const generateRoundRobinMatches = (teams) => {
-    const matches = []
-
+  const generateRoundRobinMatches = (teams: string[]): Partial<Match>[] => {
+    const matches: Partial<Match>[] = [];
     for (let i = 0; i < teams.length; i++) {
       for (let j = i + 1; j < teams.length; j++) {
         matches.push({
           team1: teams[i],
           team2: teams[j],
-        })
+        });
       }
     }
+    return matches;
+  };
 
-    return matches
-  }
+  const parseTime = (timeString: string): number => {
+    const [hours, minutes] = timeString.split(":").map(Number);
+    const date = new Date();
+    date.setHours(hours, minutes, 0, 0);
+    return date.getTime();
+  };
 
-  const parseTime = (timeString) => {
-    const [hours, minutes] = timeString.split(":").map(Number)
-    const date = new Date()
-    date.setHours(hours, minutes, 0, 0)
-    return date.getTime()
-  }
-
-  const formatTime = (timestamp) => {
-    const date = new Date(timestamp)
-    return `${date.getHours().toString().padStart(2, "0")}:${date.getMinutes().toString().padStart(2, "0")}`
-  }
+  const formatTime = (timestamp: number): string => {
+    const date = new Date(timestamp);
+    return `${date.getHours().toString().padStart(2, "0")}:${date
+      .getMinutes()
+      .toString()
+      .padStart(2, "0")}`;
+  };
 
   const openScoreDialog = (match, isKnockout = false) => {
-    setSelectedMatch({ ...match, isKnockout })
-    setScore1(match.score1 !== null ? match.score1.toString() : "")
-    setScore2(match.score2 !== null ? match.score2.toString() : "")
-  }
+    setSelectedMatch({ ...match, isKnockout });
+    setScore1(match.score1 !== null ? match.score1.toString() : "");
+    setScore2(match.score2 !== null ? match.score2.toString() : "");
+  };
 
   const saveScore = () => {
-    if (!selectedMatch) return
+    if (!selectedMatch) return;
 
     if (selectedMatch.isKnockout) {
       // Update knockout match
@@ -477,19 +580,27 @@ export default function TournamentScheduler() {
             score1: Number.parseInt(score1) || 0,
             score2: Number.parseInt(score2) || 0,
             completed: true,
-            winner: Number.parseInt(score1) > Number.parseInt(score2) ? match.team1 : match.team2,
-          }
+            winner:
+              Number.parseInt(score1) > Number.parseInt(score2)
+                ? selectedMatch.team1
+                : selectedMatch.team2,
+          };
         }
-        return match
-      })
+        return match;
+      });
 
-      setKnockoutMatches(updatedMatches)
+      setKnockoutMatches(updatedMatches);
 
       // Check if we need to update next round matches with the winner
       if (selectedMatch.nextMatchId) {
-        const nextMatch = updatedMatches.find((m) => m.id === selectedMatch.nextMatchId)
+        const nextMatch = updatedMatches.find(
+          (m) => m.id === selectedMatch.nextMatchId
+        );
         if (nextMatch) {
-          const winner = Number.parseInt(score1) > Number.parseInt(score2) ? selectedMatch.team1 : selectedMatch.team2
+          const winner =
+            Number.parseInt(score1) > Number.parseInt(score2)
+              ? selectedMatch.team1
+              : selectedMatch.team2;
 
           // Update the next match with this winner
           updatedMatches.forEach((match, index) => {
@@ -498,17 +609,17 @@ export default function TournamentScheduler() {
                 updatedMatches[index] = {
                   ...match,
                   team1: winner,
-                }
+                };
               } else {
                 updatedMatches[index] = {
                   ...match,
                   team2: winner,
-                }
+                };
               }
             }
-          })
+          });
 
-          setKnockoutMatches(updatedMatches)
+          setKnockoutMatches(updatedMatches);
         }
       }
     } else {
@@ -520,34 +631,36 @@ export default function TournamentScheduler() {
             score1: Number.parseInt(score1) || 0,
             score2: Number.parseInt(score2) || 0,
             completed: true,
-          }
+          };
         }
-        return match
-      })
+        return match;
+      });
 
       setTournament({
-        ...tournament,
+        groups: tournament.groups,
         matches: updatedMatches,
-      })
+      });
     }
 
-    setSelectedMatch(null)
+    setSelectedMatch(null);
 
     toast({
       title: "Score saved",
       description: `Updated result for ${selectedMatch.team1} vs ${selectedMatch.team2}`,
-    })
-  }
+    });
+  };
 
   // Update the calculateStandings function to include legs statistics
-  const calculateStandings = (groupIndex) => {
-    if (!tournament) return []
+  const calculateStandings = (groupIndex: number) => {
+    if (!tournament) return [];
 
-    const groupNumber = groupIndex + 1
-    const groupMatches = tournament.matches.filter((match) => match.group === groupNumber)
-    const teams = tournament.groups[groupIndex]
+    const groupNumber = groupIndex + 1;
+    const groupMatches = tournament.matches.filter(
+      (match: Match) => match.group === groupNumber
+    );
+    const teams = tournament.groups[groupIndex];
 
-    const standings = teams.map((team) => ({
+    const standings = teams.map((team: string) => ({
       name: team,
       played: 0,
       won: 0,
@@ -557,145 +670,145 @@ export default function TournamentScheduler() {
       legsFor: 0,
       legsAgainst: 0,
       legDiff: 0,
-      color: teamColors[team],
-    }))
+      color: (teamColors as { [key: string]: string })[team] || "#ccc",
+    }));
 
-    groupMatches.forEach((match) => {
-      if (!match.completed) return
-
-      const team1Index = standings.findIndex((t) => t.name === match.team1)
-      const team2Index = standings.findIndex((t) => t.name === match.team2)
-
-      if (team1Index === -1 || team2Index === -1) return
-
+    groupMatches.forEach((match: Match) => {
+      if (!match.completed) return;
+      const team1Index = standings.findIndex((t) => t.name === match.team1);
+      const team2Index = standings.findIndex((t) => t.name === match.team2);
+      if (team1Index === -1 || team2Index === -1) return;
       // Update matches played
-      standings[team1Index].played++
-      standings[team2Index].played++
-
-      // Update legs statistics
-      standings[team1Index].legsFor += match.score1
-      standings[team1Index].legsAgainst += match.score2
-      standings[team2Index].legsFor += match.score2
-      standings[team2Index].legsAgainst += match.score1
-
-      if (match.score1 > match.score2) {
-        // Team 1 won
-        standings[team1Index].won++
-        standings[team1Index].points += 3
-        standings[team2Index].lost++
-      } else if (match.score1 < match.score2) {
-        // Team 2 won
-        standings[team2Index].won++
-        standings[team2Index].points += 3
-        standings[team1Index].lost++
-      } else {
-        // Draw
-        standings[team1Index].drawn++
-        standings[team2Index].drawn++
-        standings[team1Index].points += 1
-        standings[team2Index].points += 1
+      standings[team1Index].played++;
+      standings[team2Index].played++;
+      // Update legs statistics, with null checks
+      if (match.score1 !== null && match.score2 !== null) {
+        standings[team1Index].legsFor += match.score1;
+        standings[team1Index].legsAgainst += match.score2;
+        standings[team2Index].legsFor += match.score2;
+        standings[team2Index].legsAgainst += match.score1;
+        if (match.score1 > match.score2) {
+          standings[team1Index].won++;
+          standings[team1Index].points += 3;
+          standings[team2Index].lost++;
+        } else if (match.score1 < match.score2) {
+          standings[team2Index].won++;
+          standings[team2Index].points += 3;
+          standings[team1Index].lost++;
+        } else {
+          standings[team1Index].drawn++;
+          standings[team2Index].drawn++;
+          standings[team1Index].points += 1;
+          standings[team2Index].points += 1;
+        }
       }
-    })
+    });
 
     // Calculate leg difference
     standings.forEach((team) => {
-      team.legDiff = team.legsFor - team.legsAgainst
-    })
+      team.legDiff = team.legsFor - team.legsAgainst;
+    });
 
     // Sort by points (descending), then by leg difference
     return standings.sort((a, b) => {
       if (b.points !== a.points) {
-        return b.points - a.points
+        return b.points - a.points;
       }
-      return b.legDiff - a.legDiff
-    })
-  }
+      return b.legDiff - a.legDiff;
+    });
+  };
 
   // Function to get teams that advance from group stage
   const getAdvancingTeams = () => {
-    if (!tournament) return []
+    if (!tournament) return [];
 
-    const advancingTeams = []
+    const advancingTeams: any[] = [];
 
     tournament.groups.forEach((group, groupIndex) => {
-      const standings = calculateStandings(groupIndex)
+      const standings = calculateStandings(groupIndex);
       // Take top N teams from each group
-      const topTeams = standings.slice(0, teamsAdvancing)
+      const topTeams = standings.slice(0, teamsAdvancing);
       advancingTeams.push(
         ...topTeams.map((team) => ({
           name: team.name,
           group: groupIndex + 1,
           position: advancingTeams.length + 1,
           color: teamColors[team.name],
-        })),
-      )
-    })
+        }))
+      );
+    });
 
-    return advancingTeams
-  }
+    return advancingTeams;
+  };
 
   // Create knockout stage matches
   const createKnockoutMatches = () => {
-    const advancingTeams = getAdvancingTeams()
+    const advancingTeams = getAdvancingTeams();
 
     if (advancingTeams.length === 0) {
       toast({
         variant: "destructive",
         title: "Cannot create knockout stage",
-        description: "Please complete the group stage matches to determine advancing teams.",
-      })
-      return
+        description:
+          "Please complete the group stage matches to determine advancing teams.",
+      });
+      return;
     }
 
     // Check if we have enough completed matches
-    const completedMatches = tournament.matches.filter((match) => match.completed)
-    const totalMatches = tournament.matches.length
+    const completedMatches = tournament.matches.filter(
+      (match) => match.completed
+    );
+    const totalMatches = tournament.matches.length;
 
     if (completedMatches.length < totalMatches) {
       toast({
-        variant: "warning",
+        variant: "default" as const,
         title: "Group stage incomplete",
         description: `Only ${completedMatches.length} of ${totalMatches} matches are completed. Standings may change.`,
-      })
+      });
     }
 
     // Determine the bracket size (8, 16, 32, etc.)
-    let bracketSize = 2
+    let bracketSize = 2;
     while (bracketSize < advancingTeams.length) {
-      bracketSize *= 2
+      bracketSize *= 2;
     }
 
     // Create knockout matches
-    const matches = []
-    let matchId = 1
-    let currentRound = 1
-    let teamsInRound = advancingTeams
-    let nextRoundFirstMatchId = Math.ceil(advancingTeams.length / 2) + 1
+    const matches = [];
+    let matchId = 1;
+    let currentRound = 1;
+    let teamsInRound = advancingTeams;
+    let nextRoundFirstMatchId = Math.ceil(advancingTeams.length / 2) + 1;
 
     // For first round, match teams based on group performance
     // Example: Group A 1st vs Group B 2nd, Group B 1st vs Group A 2nd
     while (teamsInRound.length > 1) {
-      const roundMatches = []
-      const numMatchesInRound = Math.floor(teamsInRound.length / 2)
+      const roundMatches = [];
+      const numMatchesInRound = Math.floor(teamsInRound.length / 2);
 
       // For the first round, create matchups
       if (currentRound === 1) {
         // Sort teams by position in group
         const sortedTeams = [...teamsInRound].sort((a, b) => {
           // First by group number
-          if (a.group !== b.group) return a.group - b.group
+          if (a.group !== b.group) return a.group - b.group;
           // Then by position within group
-          return a.position - b.position
-        })
+          return a.position - b.position;
+        });
 
         // Create matchups (1st vs last, 2nd vs 2nd last, etc.)
         for (let i = 0; i < Math.floor(sortedTeams.length / 2); i++) {
-          const team1 = sortedTeams[i]
-          const team2 = sortedTeams[sortedTeams.length - 1 - i]
+          const team1 = sortedTeams[i];
+          const team2 = sortedTeams[sortedTeams.length - 1 - i];
 
           // Calculate which match in the next round this will feed into
-          const nextMatchId = currentRound < Math.log2(bracketSize) ? nextRoundFirstMatchId + Math.floor(i / 2) : null
-          const nextMatchPosition = i % 2 === 0 ? "team1" : "team2"
+          const nextMatchId =
+            currentRound < Math.log2(bracketSize)
+              ? nextRoundFirstMatchId + Math.floor(i / 2)
+              : null;
+          const nextMatchPosition = i % 2 === 0 ? "team1" : "team2";
 
           roundMatches.push({
             id: matchId++,
@@ -710,16 +823,19 @@ export default function TournamentScheduler() {
             winner: null,
             nextMatchId,
             nextMatchPosition,
-          })
+          });
         }
       } else {
         // For later rounds, create placeholder matches
         for (let i = 0; i < numMatchesInRound; i++) {
-          const nextMatchId = currentRound < Math.log2(bracketSize) ? nextRoundFirstMatchId + Math.floor(i / 2) : null
-          const nextMatchPosition = i % 2 === 0 ? "team1" : "team2"
+          const nextMatchId =
+            currentRound < Math.log2(bracketSize)
+              ? nextRoundFirstMatchId + Math.floor(i / 2)
+              : null;
+          const nextMatchPosition = i % 2 === 0 ? "team1" : "team2";
 
           // For matches after the first round, teams will be determined by winners
-          const previousRoundFirstIndex = matchId - numMatchesInRound * 2
+          const previousRoundFirstIndex = matchId - numMatchesInRound * 2;
 
           roundMatches.push({
             id: matchId++,
@@ -734,46 +850,51 @@ export default function TournamentScheduler() {
             winner: null,
             nextMatchId,
             nextMatchPosition,
-          })
+          });
         }
       }
 
-      matches.push(...roundMatches)
+      matches.push(...roundMatches);
 
       // Prepare for next round
       teamsInRound = roundMatches.map((match) => ({
         name: `Winner of Match ${match.id}`,
         match: match.id,
-      }))
+      }));
 
-      currentRound++
-      nextRoundFirstMatchId = matchId
+      currentRound++;
+      nextRoundFirstMatchId = matchId;
     }
 
-    setKnockoutMatches(matches)
-    setActiveTab("finals")
+    setKnockoutMatches(matches);
+    setActiveTab("finals");
 
     toast({
       title: "Knockout stage created",
       description: `Created knockout bracket with ${advancingTeams.length} advancing teams.`,
-    })
-  }
+    });
+  };
 
   // Calculate time for knockout match
-  const calculateKnockoutMatchTime = (round, matchIndex) => {
+  const calculateKnockoutMatchTime = (
+    round: number,
+    matchIndex: number
+  ): string => {
     // Use knockout start time for base
     const baseTime = knockoutStartTime
       ? parseTime(knockoutStartTime)
-      : parseTime(startTime) + tournament.matches.length * matchDuration * 60000
+      : parseTime(startTime) +
+        tournament.matches.length * matchDuration * 60000;
 
     // Add time based on round and match index
-    const timeOffset = (round - 1) * 60 * 60000 + matchIndex * matchDuration * 60000
-    return formatTime(baseTime + timeOffset)
-  }
+    const timeOffset =
+      (round - 1) * 60 * 60000 + matchIndex * matchDuration * 60000;
+    return formatTime(baseTime + timeOffset);
+  };
 
   // Function to check if a team plays in consecutive time slots
-  const getTeamSchedule = (teamName) => {
-    if (!tournament) return []
+  const getTeamSchedule = (teamName: string) => {
+    if (!tournament) return [];
 
     return tournament.matches
       .filter((match) => match.team1 === teamName || match.team2 === teamName)
@@ -788,690 +909,563 @@ export default function TournamentScheduler() {
             ? `${match.score1}-${match.score2}`
             : `${match.score2}-${match.score1}`
           : null,
-      }))
-  }
+      }));
+  };
 
   // Get knockout round name
-  const getKnockoutRoundName = (round, totalTeams) => {
-    const totalRounds = Math.ceil(Math.log2(totalTeams))
-    const roundsFromFinal = totalRounds - round
+  const getKnockoutRoundName = (round: number, totalTeams: number) => {
+    const totalRounds = Math.ceil(Math.log2(totalTeams));
+    const roundsFromFinal = totalRounds - round;
 
     switch (roundsFromFinal) {
       case 0:
-        return "Final"
+        return "Final";
       case 1:
-        return "Semi-Finals"
+        return "Semi-Finals";
       case 2:
-        return "Quarter-Finals"
+        return "Quarter-Finals";
       case 3:
-        return "Round of 16"
+        return "Round of 16";
       case 4:
-        return "Round of 32"
+        return "Round of 32";
       default:
-        return `Round ${round}`
+        return `Round ${round}`;
     }
-  }
+  };
 
   // Group knockout matches by round
   const getKnockoutMatchesByRound = () => {
-    if (!knockoutMatches.length) return []
-
-    const rounds = []
-    const totalTeams = tournament.groups.reduce((acc, group) => acc + Math.min(group.length, teamsAdvancing), 0)
-
-    // Group matches by round
-    knockoutMatches.forEach((match) => {
-      if (!rounds[match.round - 1]) {
-        rounds[match.round - 1] = {
-          name: getKnockoutRoundName(match.round, totalTeams),
+    if (!knockoutMatches.length || !tournament) return [];
+    const rounds: { name: string; matches: Match[] }[] = [];
+    const totalTeams = tournament.groups.reduce(
+      (acc: number, group: string[]) =>
+        acc + Math.min(group.length, teamsAdvancing),
+      0
+    );
+    knockoutMatches.forEach((match: Match) => {
+      if (!rounds[match.round! - 1]) {
+        rounds[match.round! - 1] = {
+          name: getKnockoutRoundName(match.round!, totalTeams),
           matches: [],
-        }
+        };
       }
-      rounds[match.round - 1].matches.push(match)
-    })
-
-    return rounds
-  }
+      rounds[match.round! - 1].matches.push(match);
+    });
+    return rounds;
+  };
 
   if (isLoading) {
     return (
       <div className="container mx-auto py-6 px-4 sm:px-6 flex justify-center items-center min-h-[50vh]">
         <div className="text-center">
-          <h2 className="text-xl font-semibold mb-2">Loading tournament data...</h2>
-          <p className="text-muted-foreground">Please wait while we restore your saved tournament.</p>
+          <h2 className="text-xl font-semibold mb-2">
+            Loading tournament data...
+          </h2>
+          <p className="text-muted-foreground">
+            Please wait while we restore your saved tournament.
+          </p>
         </div>
       </div>
-    )
+    );
   }
 
   return (
-    <div className="container mx-auto py-6 px-4 sm:px-6">
-      <h1 className="text-2xl sm:text-3xl font-bold text-center mb-6">Dart Tournament Scheduler</h1>
+    <div className="container mx-auto py-4 px-2 sm:px-4 md:px-6">
+      <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-center mb-4 sm:mb-6">
+        {tournamentName}
+      </h1>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="max-w-4xl mx-auto">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="setup">Setup</TabsTrigger>
-          <TabsTrigger value="schedule" disabled={!tournament}>
+      <Tabs
+        value={activeTab}
+        onValueChange={setActiveTab}
+        className="w-full max-w-4xl mx-auto"
+      >
+        <TabsList
+          className="flex w-full overflow-x-auto no-scrollbar gap-1 sm:grid sm:grid-cols-4 sm:gap-2"
+          style={{ WebkitOverflowScrolling: "touch" }}
+        >
+          <TabsTrigger
+            value="setup"
+            className="min-w-[120px] flex-1 text-xs sm:text-sm py-3"
+          >
+            Setup
+          </TabsTrigger>
+          <TabsTrigger
+            value="schedule"
+            disabled={!tournament}
+            className="min-w-[120px] flex-1 text-xs sm:text-sm py-3"
+          >
             Schedule
           </TabsTrigger>
-          <TabsTrigger value="standings" disabled={!tournament}>
+          <TabsTrigger
+            value="standings"
+            disabled={!tournament}
+            className="min-w-[120px] flex-1 text-xs sm:text-sm py-3"
+          >
             Standings
           </TabsTrigger>
-          <TabsTrigger value="finals" disabled={!tournament}>
+          <TabsTrigger
+            value="finals"
+            disabled={!tournament}
+            className="min-w-[120px] flex-1 text-xs sm:text-sm py-3"
+          >
             Finals
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="setup">
+        <TabsContent value="setup" className="mt-4">
           <Card>
             <CardHeader>
-              <CardTitle>Tournament Settings</CardTitle>
+              <CardTitle>Tournament Setup</CardTitle>
               <CardDescription>
-                Configure your tournament by setting the number of teams, dartboards, and timing details.
+                Configure your tournament settings
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
-              {tournament && (
-                <Alert className="mb-4">
-                  <AlertDescription>
-                    You have an active tournament. Generating a new tournament will replace the current one.
-                  </AlertDescription>
-                </Alert>
-              )}
-
-              <div className="space-y-2">
-                <Label htmlFor="teams">Number of Teams</Label>
-                <div className="flex items-center space-x-2">
-                  <Users className="h-4 w-4 text-muted-foreground" />
+            <CardContent>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2 sm:col-span-2">
+                  <Label htmlFor="tournamentName">Tournament Name</Label>
                   <Input
-                    id="teams"
-                    type="number"
-                    min="2"
-                    value={numTeams}
-                    onChange={(e) => setNumTeams(Number.parseInt(e.target.value))}
+                    id="tournamentName"
+                    type="text"
+                    value={tournamentName}
+                    onChange={(e) => setTournamentName(e.target.value)}
+                    className="w-full"
+                    maxLength={50}
                   />
                 </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="boards">Number of Dartboards</Label>
-                <div className="flex items-center space-x-2">
-                  <Target className="h-4 w-4 text-muted-foreground" />
+                <div className="space-y-2">
+                  <Label htmlFor="numTeams">Number of Teams</Label>
                   <Input
-                    id="boards"
+                    id="numTeams"
+                    type="number"
+                    min="4"
+                    max="32"
+                    value={numTeams}
+                    onChange={(e) => setNumTeams(parseInt(e.target.value))}
+                    className="w-full"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="numBoards">Number of Boards</Label>
+                  <Input
+                    id="numBoards"
                     type="number"
                     min="1"
+                    max="8"
                     value={numBoards}
-                    onChange={(e) => setNumBoards(Number.parseInt(e.target.value))}
+                    onChange={(e) => setNumBoards(parseInt(e.target.value))}
+                    className="w-full"
                   />
                 </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="duration">Match Duration (minutes)</Label>
-                <div className="flex items-center space-x-2">
-                  <Clock className="h-4 w-4 text-muted-foreground" />
+                <div className="space-y-2">
+                  <Label htmlFor="matchDuration">
+                    Match Duration (minutes)
+                  </Label>
                   <Input
-                    id="duration"
+                    id="matchDuration"
                     type="number"
                     min="5"
+                    max="60"
                     value={matchDuration}
-                    onChange={(e) => setMatchDuration(Number.parseInt(e.target.value))}
+                    onChange={(e) => setMatchDuration(parseInt(e.target.value))}
+                    className="w-full"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="startTime">Start Time</Label>
+                  <Input
+                    id="startTime"
+                    type="time"
+                    value={startTime}
+                    onChange={(e) => setStartTime(e.target.value)}
+                    className="w-full"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="teamsAdvancing">
+                    Teams Advancing per Group
+                  </Label>
+                  <Input
+                    id="teamsAdvancing"
+                    type="number"
+                    min="1"
+                    max="4"
+                    value={teamsAdvancing}
+                    onChange={(e) =>
+                      setTeamsAdvancing(parseInt(e.target.value))
+                    }
+                    className="w-full"
                   />
                 </div>
               </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="start-time">Start Time</Label>
-                <div className="flex items-center space-x-2">
-                  <Clock className="h-4 w-4 text-muted-foreground" />
-                  <Input id="start-time" type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="teams-advancing">Teams Advancing per Group</Label>
-                <div className="flex items-center space-x-2">
-                  <Medal className="h-4 w-4 text-muted-foreground" />
-                  <Select
-                    value={teamsAdvancing.toString()}
-                    onValueChange={(value) => setTeamsAdvancing(Number.parseInt(value))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select number of teams" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1">Top 1 team</SelectItem>
-                      <SelectItem value="2">Top 2 teams</SelectItem>
-                      <SelectItem value="3">Top 3 teams</SelectItem>
-                      <SelectItem value="4">Top 4 teams</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  This determines how many teams from each group will advance to the knockout stage.
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Team Names</Label>
-                <Card>
-                  <CardContent className="p-4">
-                    <ScrollArea className="h-[200px] pr-4">
-                      <div className="space-y-2">
-                        {teamNames.map((name, index) => (
-                          <div key={index} className="flex items-center justify-between">
-                            {editingTeamIndex === index ? (
-                              <div className="flex items-center space-x-2 w-full">
-                                <Input
-                                  value={editingTeamName}
-                                  onChange={(e) => setEditingTeamName(e.target.value)}
-                                  className="flex-1"
-                                  autoFocus
-                                />
-                                <Button
-                                  size="icon"
-                                  variant="ghost"
-                                  onClick={() => {
-                                    handleTeamNameChange(index, editingTeamName)
-                                    setEditingTeamIndex(null)
-                                  }}
-                                >
-                                  <Check className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            ) : (
-                              <>
-                                <div className="flex items-center">
-                                  <div
-                                    className="w-3 h-3 rounded-full mr-2"
-                                    style={{ backgroundColor: teamColors[name] || generateRandomColor() }}
-                                  ></div>
-                                  <span>{name}</span>
-                                </div>
-                                <Button
-                                  size="icon"
-                                  variant="ghost"
-                                  onClick={() => {
-                                    setEditingTeamIndex(index)
-                                    setEditingTeamName(name)
-                                  }}
-                                >
-                                  <Edit className="h-4 w-4" />
-                                </Button>
-                              </>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </ScrollArea>
-                  </CardContent>
-                </Card>
-              </div>
             </CardContent>
-            <CardFooter className="flex flex-col sm:flex-row gap-2">
+            <CardFooter className="flex flex-col sm:flex-row gap-2 sm:gap-4">
               <Button onClick={generateTournament} className="w-full sm:w-auto">
-                <Save className="mr-2 h-4 w-4" />
                 Generate Tournament
               </Button>
-
-              {tournament && (
-                <Button variant="destructive" onClick={clearSavedData} className="w-full sm:w-auto">
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Clear Tournament Data
-                </Button>
-              )}
+              <Button
+                variant="outline"
+                onClick={clearSavedData}
+                className="w-full sm:w-auto"
+              >
+                Clear All Data
+              </Button>
             </CardFooter>
           </Card>
         </TabsContent>
 
-        <TabsContent value="schedule">
+        <TabsContent value="schedule" className="mt-4">
           {tournament && (
-            <div className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Group Assignments</CardTitle>
-                  <CardDescription>Teams have been divided into {tournament.groups.length} groups</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    {tournament.groups.map((group, index) => (
-                      <Card key={index}>
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-lg">Group {index + 1}</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <ul className="space-y-2">
-                            {group.map((team, teamIndex) => (
-                              <li key={teamIndex} className="flex items-center justify-between">
-                                <div className="flex items-center">
-                                  <div
-                                    className="w-4 h-4 rounded-full mr-2"
-                                    style={{ backgroundColor: teamColors[team] }}
-                                  ></div>
-                                  {team}
-                                </div>
-                                <Button size="icon" variant="ghost" onClick={() => openTeamNameDialog(team)}>
-                                  <Edit className="h-4 w-4" />
-                                </Button>
-                              </li>
-                            ))}
-                          </ul>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Match Schedule</CardTitle>
-                  <CardDescription>
-                    {tournament.matches.length} matches scheduled across {numBoards} dartboards
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="overflow-x-auto -mx-4 sm:mx-0">
-                    <table className="w-full border-collapse">
-                      <thead>
-                        <tr className="border-b">
-                          <th className="text-left py-3 px-2 sm:px-4">Time</th>
-                          <th className="text-left py-3 px-2 sm:px-4">Board</th>
-                          <th className="text-left py-3 px-2 sm:px-4">Group</th>
-                          <th className="text-left py-3 px-2 sm:px-4">Match</th>
-                          <th className="text-left py-3 px-2 sm:px-4">Result</th>
-                          <th className="text-left py-3 px-2 sm:px-4">Action</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {tournament.matches.map((match, index) => (
-                          <tr key={index} className="border-b hover:bg-muted/50">
-                            <td className="py-3 px-2 sm:px-4">{match.time}</td>
-                            <td className="py-3 px-2 sm:px-4">Board {match.board}</td>
-                            <td className="py-3 px-2 sm:px-4">Group {match.group}</td>
-                            <td className="py-3 px-2 sm:px-4">
-                              <div className="flex flex-col sm:flex-row sm:items-center gap-1">
-                                <div
-                                  className="w-3 h-3 rounded-full inline-block mr-1"
-                                  style={{ backgroundColor: teamColors[match.team1] }}
-                                ></div>
-                                <span className="text-sm sm:text-base">{match.team1}</span>
-                                <span className="hidden sm:inline mx-1">vs</span>
-                                <div className="flex items-center">
-                                  <div
-                                    className="w-3 h-3 rounded-full inline-block mr-1"
-                                    style={{ backgroundColor: teamColors[match.team2] }}
-                                  ></div>
-                                  <span className="text-sm sm:text-base">{match.team2}</span>
-                                </div>
-                              </div>
-                            </td>
-                            <td className="py-3 px-2 sm:px-4">
-                              {match.completed ? (
-                                <Badge variant={match.score1 === match.score2 ? "outline" : "default"}>
-                                  {match.score1} - {match.score2}
-                                </Badge>
-                              ) : (
-                                <Badge variant="outline">Pending</Badge>
-                              )}
-                            </td>
-                            <td className="py-3 px-2 sm:px-4">
-                              <Button
-                                size="sm"
-                                variant={match.completed ? "outline" : "default"}
-                                onClick={() => openScoreDialog(match)}
-                              >
-                                {match.completed ? "Update" : "Add Result"}
-                              </Button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </CardContent>
-                <CardFooter className="flex flex-col sm:flex-row gap-2">
-                  <Button variant="outline" onClick={() => setActiveTab("setup")} className="w-full sm:w-auto">
-                    Modify Tournament
-                  </Button>
-                  <Button onClick={() => setActiveTab("standings")} className="w-full sm:w-auto">
-                    View Standings
-                  </Button>
-                </CardFooter>
-              </Card>
-            </div>
-          )}
-        </TabsContent>
-
-        <TabsContent value="standings">
-          {tournament && (
-            <div className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Trophy className="h-5 w-5" />
-                    Tournament Standings
-                  </CardTitle>
-                  <CardDescription>Current standings for all groups</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid gap-6 md:grid-cols-2">
-                    {tournament.groups.map((group, groupIndex) => {
-                      const standings = calculateStandings(groupIndex)
-                      return (
-                        <Card key={groupIndex}>
-                          <CardHeader className="pb-2">
-                            <CardTitle className="text-lg">Group {groupIndex + 1}</CardTitle>
-                          </CardHeader>
-                          <CardContent>
-                            <div className="overflow-x-auto -mx-4 sm:mx-0">
-                          
-                              <table className="w-full border-collapse text-sm">
-                                <thead>
-                                  <tr className="border-b">
-                                    <th className="text-left py-2 px-2">Team</th>
-                                    <th className="text-center py-2 px-1">P</th>
-                                    <th className="text-center py-2 px-1">W</th>
-                                    <th className="text-center py-2 px-1">D</th>
-                                    <th className="text-center py-2 px-1">L</th>
-                                    <th className="text-center py-2 px-1">Diff</th>
-                                    <th className="text-center py-2 px-1">Pts</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {standings.map((team, index) => (
-                                    <tr
-                                      key={index}
-                                      className={`border-b hover:bg-muted/50 ${index < teamsAdvancing ? "font-medium" : ""}`}
-                                    >
-                                      <td className="py-2 px-2">
-                                        <div className="flex items-center justify-between">
-                                          <div className="flex items-center">
-                                            <div
-                                              className="w-3 h-3 rounded-full mr-2"
-                                              style={{ backgroundColor: team.color }}
-                                            ></div>
-                                            {team.name}
-                                            {index < teamsAdvancing && (
-                                              <Badge variant="secondary" className="ml-2 text-xs">
-                                                Advances
-                                              </Badge>
-                                            )}
-                                          </div>
-                                          <Button
-                                            size="icon"
-                                            variant="ghost"
-                                            className="h-6 w-6"
-                                            onClick={() => openTeamNameDialog(team.name)}
-                                          >
-                                            <Edit className="h-3 w-3" />
-                                          </Button>
-                                        </div>
-                                      </td>
-                                      <td className="text-center py-2 px-1">{team.played}</td>
-                                      <td className="text-center py-2 px-1">{team.won}</td>
-                                      <td className="text-center py-2 px-1">{team.drawn}</td>
-                                      <td className="text-center py-2 px-1">{team.lost}</td>
-                                      
-                                      <td
-                                        className="text-center py-2 px-1"
-                                        className={
-                                          team.legDiff > 0 ? "text-green-600" : team.legDiff < 0 ? "text-red-600" : ""
-                                        }
-                                      >
-                                        {team.legDiff > 0 ? "+" : ""}
-                                        {team.legDiff}
-                                      </td>
-                                      <td className="text-center py-2 px-1 font-bold">{team.points}</td>
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </table>
+            <div className="space-y-4">
+              <div className="flex gap-2 mb-2">
+                <Button
+                  variant={matchView === "list" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setMatchView("list")}
+                >
+                  List View
+                </Button>
+                <Button
+                  variant={matchView === "boardGrid" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setMatchView("boardGrid")}
+                >
+                  Board Grid View
+                </Button>
+              </div>
+              {matchView === "list" ? (
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {tournament.matches.map((match, index) => (
+                    <Card key={index} className="w-full">
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-sm sm:text-base">
+                          Match {index + 1}
+                        </CardTitle>
+                        <CardDescription className="text-xs sm:text-sm">
+                          Board {match.board} • {match.time}
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <div
+                                className="w-3 h-3 rounded-full"
+                                style={{
+                                  backgroundColor:
+                                    teamColors[match.team1] || "#ccc",
+                                }}
+                              />
+                              <span className="text-sm sm:text-base truncate">
+                                {match.team1}
+                              </span>
                             </div>
-                          </CardContent>
-                        </Card>
-                      )
-                    })}
-                  </div>
-                </CardContent>
-                <CardFooter className="flex flex-col sm:flex-row gap-2">
-                  <Button onClick={() => setActiveTab("schedule")} className="w-full sm:w-auto">
-                    Back to Schedule
-                  </Button>
-                  <Button onClick={() => setActiveTab("finals")} className="w-full sm:w-auto">
-                    View Finals
-                  </Button>
-                </CardFooter>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Team Schedules</CardTitle>
-                  <CardDescription>View the complete schedule for each team</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    {tournament.groups.flat().map((team, index) => {
-                      const schedule = getTeamSchedule(team)
-                      return (
-                        <Card key={index}>
-                          <CardHeader className="pb-2">
-                            <CardTitle className="text-lg flex items-center justify-between">
-                              <div className="flex items-center">
-                                <div
-                                  className="w-4 h-4 rounded-full mr-2"
-                                  style={{ backgroundColor: teamColors[team] }}
-                                ></div>
-                                {team}
+                            <div className="flex items-center gap-2 mt-2">
+                              <div
+                                className="w-3 h-3 rounded-full"
+                                style={{
+                                  backgroundColor:
+                                    teamColors[match.team2] || "#ccc",
+                                }}
+                              />
+                              <span className="text-sm sm:text-base truncate">
+                                {match.team2}
+                              </span>
+                            </div>
+                          </div>
+                          {match.completed ? (
+                            <div className="flex flex-col items-end gap-1">
+                              <div className="font-semibold text-base">
+                                {match.score1} - {match.score2}
                               </div>
-                              <Button size="icon" variant="ghost" onClick={() => openTeamNameDialog(team)}>
-                                <Edit className="h-4 w-4" />
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => openScoreDialog(match)}
+                                className="h-7 w-7"
+                                aria-label="Edit score"
+                              >
+                                <Pencil className="w-4 h-4" />
                               </Button>
-                            </CardTitle>
-                          </CardHeader>
-                          <CardContent>
-                            <ul className="space-y-2 text-sm">
-                              {schedule.map((match, matchIndex) => (
-                                <li key={matchIndex} className="flex justify-between items-center">
-                                  <span>{match.time}</span>
-                                  <span>vs {match.opponent}</span>
-                                  <div className="flex items-center gap-2">
-                                    {match.completed && <Badge variant="secondary">{match.result}</Badge>}
-                                    <Badge variant="outline">Board {match.board}</Badge>
-                                  </div>
-                                </li>
-                              ))}
-                            </ul>
-                          </CardContent>
-                        </Card>
-                      )
-                    })}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          )}
-        </TabsContent>
-
-        <TabsContent value="finals">
-          {tournament && (
-            <div className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Trophy className="h-5 w-5" />
-                    Knockout Stage
-                  </CardTitle>
-                  <CardDescription>Teams advancing from group stages compete in elimination matches</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {knockoutMatches.length > 0 ? (
-                    <div className="space-y-8">
-                      {getKnockoutMatchesByRound().map((round, roundIndex) => (
-                        <div key={roundIndex} className="space-y-4">
-                          <h3 className="text-lg font-semibold">{round.name}</h3>
-                          <div className="grid gap-4 sm:grid-cols-2">
-                            {round.matches.map((match, matchIndex) => (
-                              <Card key={matchIndex} className="overflow-hidden">
-                                <CardHeader className="pb-2 bg-muted/30">
-                                  <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-2">
-                                      <Badge variant="outline">Match {match.id}</Badge>
-                                      <Badge variant="outline">{match.time}</Badge>
-                                      <Badge variant="outline">Board {match.board}</Badge>
-                                    </div>
-                                    <Button
-                                      size="sm"
-                                      variant={match.completed ? "outline" : "default"}
-                                      onClick={() => openScoreDialog(match, true)}
-                                      disabled={
-                                        !match.team1 ||
-                                        match.team1.startsWith("Winner") ||
-                                        !match.team2 ||
-                                        match.team2.startsWith("Winner")
-                                      }
-                                    >
-                                      {match.completed ? "Update" : "Add Result"}
-                                    </Button>
-                                  </div>
+                            </div>
+                          ) : (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => openScoreDialog(match)}
+                              className="shrink-0"
+                            >
+                              Score
+                            </Button>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <div className="grid grid-cols-2 gap-4 min-w-[400px]">
+                    {Array.from({ length: numBoards }, (_, boardIdx) => {
+                      const boardMatches = tournament.matches.filter(
+                        (m) => m.board === boardIdx + 1
+                      );
+                      return (
+                        <div key={boardIdx} className="flex flex-col gap-2">
+                          <div className="font-semibold text-center mb-2">
+                            Board {boardIdx + 1}
+                          </div>
+                          {boardMatches.length === 0 ? (
+                            <div className="text-center text-muted-foreground text-xs">
+                              No matches
+                            </div>
+                          ) : (
+                            boardMatches.map((match, idx) => (
+                              <Card key={idx} className="w-full">
+                                <CardHeader className="pb-2">
+                                  <CardTitle className="text-xs sm:text-sm">
+                                    {match.time}
+                                  </CardTitle>
                                 </CardHeader>
-                                <CardContent className="pb-4 pt-4">
-                                  <div className="flex items-center gap-2 mb-3">
-                                    <div className="w-full flex justify-between items-center bg-muted/20 p-2 rounded-md">
+                                <CardContent>
+                                  <div className="flex items-center justify-between gap-2">
+                                    <div className="flex-1">
                                       <div className="flex items-center gap-2">
-                                        {teamColors[match.team1] ? (
-                                          <div
-                                            className="w-3 h-3 rounded-full"
-                                            style={{ backgroundColor: teamColors[match.team1] }}
-                                          ></div>
-                                        ) : (
-                                          <div className="w-3 h-3"></div>
-                                        )}
-                                        <span
-                                          className={match.completed && match.winner === match.team1 ? "font-bold" : ""}
-                                        >
+                                        <div
+                                          className="w-3 h-3 rounded-full"
+                                          style={{
+                                            backgroundColor:
+                                              teamColors[match.team1] || "#ccc",
+                                          }}
+                                        />
+                                        <span className="text-xs sm:text-sm truncate">
                                           {match.team1}
                                         </span>
                                       </div>
-                                      {match.completed && (
-                                        <Badge variant={match.winner === match.team1 ? "default" : "outline"}>
-                                          {match.score1}
-                                        </Badge>
-                                      )}
-                                    </div>
-                                  </div>
-                                  <div className="flex items-center gap-2">
-                                    <div className="w-full flex justify-between items-center bg-muted/20 p-2 rounded-md">
-                                      <div className="flex items-center gap-2">
-                                        {teamColors[match.team2] ? (
-                                          <div
-                                            className="w-3 h-3 rounded-full"
-                                            style={{ backgroundColor: teamColors[match.team2] }}
-                                          ></div>
-                                        ) : (
-                                          <div className="w-3 h-3"></div>
-                                        )}
-                                        <span
-                                          className={match.completed && match.winner === match.team2 ? "font-bold" : ""}
-                                        >
+                                      <div className="flex items-center gap-2 mt-2">
+                                        <div
+                                          className="w-3 h-3 rounded-full"
+                                          style={{
+                                            backgroundColor:
+                                              teamColors[match.team2] || "#ccc",
+                                          }}
+                                        />
+                                        <span className="text-xs sm:text-sm truncate">
                                           {match.team2}
                                         </span>
                                       </div>
-                                      {match.completed && (
-                                        <Badge variant={match.winner === match.team2 ? "default" : "outline"}>
-                                          {match.score2}
-                                        </Badge>
-                                      )}
                                     </div>
+                                    {match.completed ? (
+                                      <div className="flex flex-col items-end gap-1">
+                                        <div className="font-semibold text-base">
+                                          {match.score1} - {match.score2}
+                                        </div>
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          onClick={() => openScoreDialog(match)}
+                                          className="h-7 w-7"
+                                          aria-label="Edit score"
+                                        >
+                                          <Pencil className="w-4 h-4" />
+                                        </Button>
+                                      </div>
+                                    ) : (
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => openScoreDialog(match)}
+                                        className="shrink-0"
+                                      >
+                                        Score
+                                      </Button>
+                                    )}
                                   </div>
                                 </CardContent>
                               </Card>
-                            ))}
-                          </div>
+                            ))
+                          )}
                         </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-8">
-                      <Trophy className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                      <h3 className="text-lg font-semibold mb-2">No Knockout Matches Yet</h3>
-                      <p className="text-sm text-muted-foreground mb-6">
-                        Complete your group stage matches and generate the knockout bracket to see finals schedule.
-                      </p>
-                      <Button onClick={createKnockoutMatches}>Create Knockout Stage</Button>
-                    </div>
-                  )}
-                </CardContent>
-                {knockoutMatches.length > 0 && (
-                  <CardFooter className="flex justify-between">
-                    <div className="text-sm text-muted-foreground">
-                      Top {teamsAdvancing} {teamsAdvancing === 1 ? "team" : "teams"} from each group advance to knockout
-                      stage
-                    </div>
-                    <Button variant="outline" onClick={createKnockoutMatches}>
-                      Regenerate Bracket
-                    </Button>
-                  </CardFooter>
-                )}
-              </Card>
-
-              {knockoutMatches.length > 0 && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Advancing Teams</CardTitle>
-                    <CardDescription>
-                      Teams qualifying for the knockout stage based on group performance
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                      {tournament.groups.map((_, groupIndex) => {
-                        const standings = calculateStandings(groupIndex)
-                        const advancingTeams = standings.slice(0, teamsAdvancing)
-
-                        return (
-                          <Card key={groupIndex}>
-                            <CardHeader className="pb-2">
-                              <CardTitle className="text-lg">Group {groupIndex + 1} Qualifiers</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                              <ul className="space-y-2">
-                                {advancingTeams.map((team, index) => (
-                                  // Also update the advancing teams view in the finals tab to include leg difference
-                                  // Find this section in the finals tab:
-                                  <li key={index} className="flex items-center justify-between">
-                                    <div className="flex items-center">
-                                      <div
-                                        className="w-4 h-4 rounded-full mr-2"
-                                        style={{ backgroundColor: team.color }}
-                                      ></div>
-                                      <div className="flex flex-col">
-                                        <span>{team.name}</span>
-                                        <span className="text-xs text-muted-foreground">
-                                          {team.points} pts ({team.won}W {team.drawn}D {team.lost}L)
-                                        </span>
-                                      </div>
-                                    </div>
-                                    <Badge variant="outline">{index + 1}</Badge>
-                                  </li>
-                                ))}
-                              </ul>
-                            </CardContent>
-                          </Card>
-                        )
-                      })}
-                    </div>
-                  </CardContent>
-                </Card>
+                      );
+                    })}
+                  </div>
+                </div>
               )}
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="standings" className="mt-4">
+          {tournament && (
+            <div className="space-y-4">
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {tournament.groups.map((_, groupIndex) => {
+                  const standings = calculateStandings(groupIndex);
+                  return (
+                    <Card key={groupIndex}>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-sm sm:text-base">
+                          Group {groupIndex + 1}
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="overflow-x-auto">
+                          <table className="min-w-full text-xs sm:text-sm">
+                            <thead>
+                              <tr className="border-b">
+                                <th className="text-left font-semibold py-1 pr-2">
+                                  Team
+                                </th>
+                                <th className="px-1">W</th>
+                                <th className="px-1">D</th>
+                                <th className="px-1">L</th>
+                                <th className="px-1">Diff</th>
+                                <th className="px-1">Pts</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {standings.map((team, index) => (
+                                <tr
+                                  key={team.name}
+                                  className="border-b last:border-0"
+                                >
+                                  <td className="flex items-center gap-2 py-1 pr-2">
+                                    <div
+                                      className="w-3 h-3 rounded-full"
+                                      style={{
+                                        backgroundColor:
+                                          teamColors[team.name] || "#ccc",
+                                      }}
+                                    />
+                                    <span className="truncate max-w-[100px]">
+                                      {team.name}
+                                    </span>
+                                  </td>
+                                  <td className="text-center px-1">
+                                    {team.won}
+                                  </td>
+                                  <td className="text-center px-1">
+                                    {team.drawn}
+                                  </td>
+                                  <td className="text-center px-1">
+                                    {team.lost}
+                                  </td>
+                                  <td className="text-center px-1">
+                                    {team.legDiff}
+                                  </td>
+                                  <td className="text-center px-1 font-semibold">
+                                    {team.points}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+              <div className="flex justify-center mt-4">
+                {tournament &&
+                  Array.isArray(knockoutMatches) &&
+                  knockoutMatches.length === 0 && (
+                    <Button onClick={createKnockoutMatches}>
+                      Start Finals
+                    </Button>
+                  )}
+              </div>
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="finals" className="mt-4">
+          {knockoutMatches.length > 0 && (
+            <div className="space-y-4">
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {getKnockoutMatchesByRound().map((round, roundIndex) => (
+                  <Card key={roundIndex}>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm sm:text-base">
+                        {round.name}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                        {round.matches.map((match, matchIndex) => (
+                          <div
+                            key={matchIndex}
+                            className="flex items-center justify-between p-2 rounded-lg bg-muted/50"
+                          >
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2">
+                                <div
+                                  className="w-3 h-3 rounded-full"
+                                  style={{
+                                    backgroundColor:
+                                      teamColors[match.team1] || "#ccc",
+                                  }}
+                                />
+                                <span className="text-sm sm:text-base truncate">
+                                  {match.team1}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-2 mt-2">
+                                <div
+                                  className="w-3 h-3 rounded-full"
+                                  style={{
+                                    backgroundColor:
+                                      teamColors[match.team2] || "#ccc",
+                                  }}
+                                />
+                                <span className="text-sm sm:text-base truncate">
+                                  {match.team2}
+                                </span>
+                              </div>
+                            </div>
+                            {match.score1 !== null && match.score2 !== null ? (
+                              <div className="flex flex-col items-end gap-1">
+                                <div className="font-semibold text-base">
+                                  {match.score1} - {match.score2}
+                                </div>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => openScoreDialog(match, true)}
+                                  className="h-7 w-7"
+                                  aria-label="Edit score"
+                                >
+                                  <Pencil className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            ) : (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => openScoreDialog(match, true)}
+                                className="shrink-0 ml-2"
+                              >
+                                Score
+                              </Button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
             </div>
           )}
         </TabsContent>
       </Tabs>
 
       {/* Score Dialog */}
-      <Dialog open={!!selectedMatch} onOpenChange={(open) => !open && setSelectedMatch(null)}>
+      <Dialog
+        open={!!selectedMatch}
+        onOpenChange={(open) => !open && setSelectedMatch(null)}
+      >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>
@@ -1557,7 +1551,10 @@ export default function TournamentScheduler() {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowTeamNameDialog(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setShowTeamNameDialog(false)}
+            >
               Cancel
             </Button>
             <Button onClick={saveTeamName} disabled={!editingTeamName.trim()}>
@@ -1567,5 +1564,5 @@ export default function TournamentScheduler() {
         </DialogContent>
       </Dialog>
     </div>
-  )
+  );
 }
