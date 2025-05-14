@@ -661,72 +661,80 @@ export default function TournamentScheduler() {
       teamLastPlayed[team] = -1; // -1 means never played yet
     });
 
-    // Track how many matches each group has in the current time slot
-    const getGroupsInTimeSlot = (currentMatches: Match[]) => {
-      const groupCounts: Record<number, number> = {};
-      for (let i = 1; i <= numGroups; i++) {
-        groupCounts[i] = 0;
-      }
-
-      currentMatches.forEach((match) => {
-        if (match.group) {
-          groupCounts[match.group]++;
-        }
-      });
-
-      return groupCounts;
-    };
-
+    // Continue until all matches are scheduled
     while (allGroupMatches.length > 0) {
-      const timeSlotTeams = new Set(); // Teams playing in current time slot
-      const timeSlotMatches: Match[] = []; // Matches in current time slot
-      let boardsUsedInTimeSlot = 0;
-      let matchScheduledInThisTimeSlot = false;
+      // Teams already playing in this time slot
+      const teamsInCurrentTimeSlot = new Set<string>();
+      // Boards already in use in this time slot
+      const boardsInUse = new Set<number>();
+      let matchesScheduledInThisTimeSlot = 0;
 
-      // Try to schedule matches for all available boards in this time slot
-      while (boardsUsedInTimeSlot < numBoards && allGroupMatches.length > 0) {
-        // Get current group counts in this time slot
-        const groupCounts = getGroupsInTimeSlot(timeSlotMatches);
+      // Try to schedule matches for this time slot
+      let currentSlotMatches: Match[] = [];
+      let canScheduleMore = true;
 
-        // Score each potential match based on multiple factors
-        const scoredMatches = allGroupMatches.map((match, index) => {
-          // Skip if either team is already playing in this time slot
-          if (
-            timeSlotTeams.has(match.team1) ||
-            timeSlotTeams.has(match.team2)
-          ) {
-            return { index, score: -1, match }; // Not eligible
+      while (
+        canScheduleMore &&
+        matchesScheduledInThisTimeSlot < numBoards &&
+        allGroupMatches.length > 0
+      ) {
+        // Find eligible matches - teams not already playing in this time slot
+        const eligibleMatches = allGroupMatches.filter(
+          (match) =>
+            !teamsInCurrentTimeSlot.has(match.team1) &&
+            !teamsInCurrentTimeSlot.has(match.team2)
+        );
+
+        if (eligibleMatches.length === 0) {
+          // No more matches can be scheduled in this time slot
+          canScheduleMore = false;
+          continue;
+        }
+
+        // Score matches based on rest time
+        const scoredMatches = eligibleMatches
+          .map((match, index) => {
+            // Calculate rest score - higher is better (more rest time)
+            const team1RestScore =
+              currentTimeSlot - teamLastPlayed[match.team1];
+            const team2RestScore =
+              currentTimeSlot - teamLastPlayed[match.team2];
+            const minRestScore = Math.min(team1RestScore, team2RestScore);
+
+            return {
+              originalIndex: allGroupMatches.indexOf(match),
+              match,
+              score: minRestScore,
+            };
+          })
+          .sort((a, b) => b.score - a.score); // Sort by score descending
+
+        if (scoredMatches.length > 0) {
+          // Take the best match based on our scoring criteria
+          const bestMatch = scoredMatches[0];
+          const matchIndex = bestMatch.originalIndex;
+
+          // Remove the match from the pending list
+          const match = allGroupMatches.splice(matchIndex, 1)[0];
+
+          // Find an available board
+          let boardNumber = 1;
+          while (boardsInUse.has(boardNumber) && boardNumber <= numBoards) {
+            boardNumber++;
           }
 
-          // Calculate rest score - higher is better (more rest time)
-          const team1RestScore = currentTimeSlot - teamLastPlayed[match.team1];
-          const team2RestScore = currentTimeSlot - teamLastPlayed[match.team2];
-          const minRestScore = Math.min(team1RestScore, team2RestScore);
+          if (boardNumber > numBoards) {
+            // No more boards available in this time slot
+            // Put the match back and move to next time slot
+            allGroupMatches.push(match);
+            canScheduleMore = false;
+            continue;
+          }
 
-          // Group balance score - prefer groups that have fewer matches in this time slot
-          const groupBalanceScore = match.group
-            ? 10 / (groupCounts[match.group] + 1)
-            : 0;
-
-          // Combine scores - rest is most important, then group balance
-          const totalScore = minRestScore * 2 + groupBalanceScore;
-
-          return { index, score: totalScore, match };
-        });
-
-        // Filter out ineligible matches and sort by score (higher is better)
-        const eligibleMatches = scoredMatches
-          .filter((m) => m.score >= 0)
-          .sort((a, b) => b.score - a.score);
-
-        if (eligibleMatches.length > 0) {
-          // Take the best match based on our scoring criteria
-          const bestMatchIndex = eligibleMatches[0].index;
-          const match = allGroupMatches.splice(bestMatchIndex, 1)[0];
-
-          // Add teams to the current time slot
-          timeSlotTeams.add(match.team1);
-          timeSlotTeams.add(match.team2);
+          // Mark board and teams as in use for this time slot
+          boardsInUse.add(boardNumber);
+          teamsInCurrentTimeSlot.add(match.team1);
+          teamsInCurrentTimeSlot.add(match.team2);
 
           // Update when these teams last played
           teamLastPlayed[match.team1] = currentTimeSlot;
@@ -737,7 +745,7 @@ export default function TournamentScheduler() {
             ...match,
             id: matches.length + 1,
             time: formatTime(currentTime),
-            board: boardsUsedInTimeSlot + 1,
+            board: boardNumber,
             score1: null,
             score2: null,
             completed: false,
@@ -746,27 +754,17 @@ export default function TournamentScheduler() {
           };
 
           // Add to current time slot matches and all matches
-          timeSlotMatches.push(scheduledMatch);
+          currentSlotMatches.push(scheduledMatch);
           matches.push(scheduledMatch);
-
-          boardsUsedInTimeSlot++;
-          matchScheduledInThisTimeSlot = true;
+          matchesScheduledInThisTimeSlot++;
         } else {
-          // No eligible matches for this time slot
-          break;
+          canScheduleMore = false;
         }
       }
 
-      // If we couldn't schedule any matches in this time slot, or all boards are used,
-      // move to the next time slot
-      if (
-        !matchScheduledInThisTimeSlot ||
-        boardsUsedInTimeSlot >= numBoards ||
-        allGroupMatches.length === 0
-      ) {
-        currentTime += matchDuration * 60 * 1000;
-        currentTimeSlot++;
-      }
+      // Move to the next time slot
+      currentTime += matchDuration * 60 * 1000;
+      currentTimeSlot++;
     }
 
     // Sort matches by time for the schedule view
@@ -1745,6 +1743,7 @@ export default function TournamentScheduler() {
               </div>
               <div className="flex justify-center mt-4">
                 {tournament &&
+                  tournament.matches.every((m: Match) => m.completed) &&
                   Array.isArray(knockoutMatches) &&
                   knockoutMatches.length === 0 && (
                     <Button onClick={createKnockoutMatches}>
