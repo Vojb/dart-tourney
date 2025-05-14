@@ -1393,40 +1393,40 @@ export default function TournamentScheduler() {
         className="w-full max-w-4xl mx-auto"
       >
         <TabsList
-          className="flex w-full overflow-x-auto no-scrollbar gap-1 sm:grid sm:grid-cols-5 sm:gap-2 h-auto"
-          style={{ WebkitOverflowScrolling: "touch", overflowY: "hidden" }}
+          className="flex flex-wrap w-full gap-1 h-auto"
+          style={{ WebkitOverflowScrolling: "touch" }}
         >
           <TabsTrigger
             value="setup"
-            className="min-w-[120px] flex-1 text-xs sm:text-sm py-3"
+            className="flex-1 text-xs sm:text-sm py-2 px-2 sm:px-3 min-w-0"
           >
             Setup
           </TabsTrigger>
           <TabsTrigger
             value="schedule"
             disabled={!tournament}
-            className="min-w-[120px] flex-1 text-xs sm:text-sm py-3"
+            className="flex-1 text-xs sm:text-sm py-2 px-2 sm:px-3 min-w-0"
           >
             Schedule
           </TabsTrigger>
           <TabsTrigger
             value="results"
             disabled={!tournament}
-            className="min-w-[120px] flex-1 text-xs sm:text-sm py-3"
+            className="flex-1 text-xs sm:text-sm py-2 px-2 sm:px-3 min-w-0"
           >
             Results
           </TabsTrigger>
           <TabsTrigger
             value="standings"
             disabled={!tournament}
-            className="min-w-[120px] flex-1 text-xs sm:text-sm py-3"
+            className="flex-1 text-xs sm:text-sm py-2 px-2 sm:px-3 min-w-0"
           >
             Standings
           </TabsTrigger>
           <TabsTrigger
             value="finals"
             disabled={!tournament}
-            className="min-w-[120px] flex-1 text-xs sm:text-sm py-3"
+            className="flex-1 text-xs sm:text-sm py-2 px-2 sm:px-3 min-w-0"
           >
             Finals
           </TabsTrigger>
