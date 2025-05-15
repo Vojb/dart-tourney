@@ -6,6 +6,14 @@ export const metadata: Metadata = {
   title: "Dart Tournament Scheduler",
   description: "Schedule and manage dart tournaments",
   generator: "v0.dev",
+  manifest: "/manifest.json",
+  themeColor: "#000000",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Dart Tournament",
+  },
+  viewport: "width=device-width, initial-scale=1, maximum-scale=1",
 };
 
 export default function RootLayout({
@@ -15,6 +23,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <link rel="icon" href="/icons/icon-192x192.png" />
+        <link rel="apple-touch-icon" href="/icons/icon-512x512.png" />
+        <script src="/sw-register.js" defer />
+      </head>
       <body suppressHydrationWarning={true}>
         <ThemeProvider
           attribute="class"
