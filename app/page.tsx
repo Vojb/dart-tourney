@@ -53,6 +53,8 @@ import { MatchBoardGrid } from "@/components/MatchBoardGrid";
 import { Match, Tournament } from "@/types/tournament";
 import { useThemeState } from "../components/theme-provider";
 import { DarkModeToggle } from "../components/DarkModeToggle";
+import { Dashboard } from "../components/Dashboard";
+import { DashboardTab } from "../components/DashboardTab";
 import {
   Tooltip,
   TooltipContent,
@@ -143,7 +145,10 @@ export default function TournamentScheduler() {
         } else {
           // Initialize with default team names
           setTeamNames(
-            Array.from({ length: numTeams }, (_, i) => `Team ${i + 1}`)
+            Array.from(
+              { length: numTeams },
+              (_, i) => `${i + 1}. Team ${i + 1}`
+            )
           );
         }
 
@@ -229,7 +234,9 @@ export default function TournamentScheduler() {
       // Add new teams if needed
       while (newTeamNames.length < numTeams) {
         const index = newTeamNames.length;
-        newTeamNames.push(colorNames[index % colorNames.length]);
+        newTeamNames.push(
+          `${index + 1}. ${colorNames[index % colorNames.length]}`
+        );
       }
 
       // Remove teams if needed
@@ -305,6 +312,26 @@ export default function TournamentScheduler() {
     localStorage.setItem("dartTournamentName", tournamentName);
   }, [tournamentName]);
 
+  // Handle responsive tab redirection for dashboard tab
+  useEffect(() => {
+    const handleResize = () => {
+      // Check if we're on a small screen and dashboard is selected
+      if (window.innerWidth < 768 && activeTab === "dashboard") {
+        // Redirect to schedule tab if tournament exists, otherwise setup
+        setActiveTab(tournament ? "schedule" : "setup");
+      }
+    };
+
+    // Set up event listener
+    window.addEventListener("resize", handleResize);
+
+    // Initial check
+    handleResize();
+
+    // Cleanup
+    return () => window.removeEventListener("resize", handleResize);
+  }, [activeTab, tournament]);
+
   // Clear all saved data
   const clearSavedData = () => {
     localStorage.removeItem("dartTournament");
@@ -317,7 +344,9 @@ export default function TournamentScheduler() {
     setTournament(null);
     setTeamColors({});
     setActiveTab("setup");
-    setTeamNames(Array.from({ length: numTeams }, (_, i) => `Team ${i + 1}`));
+    setTeamNames(
+      Array.from({ length: numTeams }, (_, i) => `${i + 1}. Team ${i + 1}`)
+    );
     setKnockoutMatches([]);
 
     toast({
@@ -606,6 +635,9 @@ export default function TournamentScheduler() {
       if (colorCounts[colorName] > 1) {
         newName = `${colorName} ${colorCounts[colorName]}`;
       }
+
+      // Add number prefix (index + 1)
+      newName = `${index + 1}. ${newName}`;
 
       // Update the team name
       updatedTeams[index] = newName;
@@ -1401,6 +1433,13 @@ export default function TournamentScheduler() {
             Setup
           </TabsTrigger>
           <TabsTrigger
+            value="dashboard"
+            disabled={!tournament}
+            className="flex-1 text-xs sm:text-sm py-2 px-2 sm:px-3 min-w-0 hidden md:flex"
+          >
+            Dashboard
+          </TabsTrigger>
+          <TabsTrigger
             value="schedule"
             disabled={!tournament}
             className="flex-1 text-xs sm:text-sm py-2 px-2 sm:px-3 min-w-0"
@@ -1658,11 +1697,24 @@ export default function TournamentScheduler() {
         <TabsContent value="standings" className="mt-4">
           {tournament && (
             <div className="space-y-4">
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="flex flex-wrap gap-4 justify-center">
                 {tournament.groups.map((_: string[], groupIndex: number) => {
                   const standings = calculateStandings(groupIndex);
                   return (
-                    <Card key={groupIndex}>
+                    <Card
+                      key={groupIndex}
+                      className={`flex-grow ${
+                        tournament.groups.length <= 2
+                          ? "basis-full md:basis-[calc(50%-0.5rem)]"
+                          : tournament.groups.length <= 3
+                          ? "basis-full md:basis-[calc(33.333%-0.667rem)]"
+                          : tournament.groups.length === 4
+                          ? "basis-full sm:basis-[calc(50%-0.5rem)]"
+                          : tournament.groups.length <= 6
+                          ? "basis-full sm:basis-[calc(50%-0.5rem)] md:basis-[calc(33.333%-0.667rem)]"
+                          : "basis-full sm:basis-[calc(50%-0.5rem)] md:basis-[calc(33.333%-0.667rem)] xl:basis-[calc(25%-0.75rem)]"
+                      }`}
+                    >
                       <CardHeader className="pb-2">
                         <CardTitle className="text-sm sm:text-base">
                           Group {groupIndex + 1}
@@ -1875,6 +1927,23 @@ export default function TournamentScheduler() {
               </div>
             </div>
           )}
+        </TabsContent>
+
+        <TabsContent value="dashboard" className="mt-4 hidden md:block">
+          <DashboardTab
+            tournament={tournament}
+            teamColors={teamColors}
+            knockoutMatches={knockoutMatches}
+            teamsAdvancing={teamsAdvancing}
+            openScoreDialog={openScoreDialog}
+            parseTime={parseTime}
+            calculateStandings={calculateStandings}
+            getKnockoutMatchesByRound={getKnockoutMatchesByRound}
+            matchView={matchView}
+            numBoards={numBoards}
+            onScoreChange={handleScoreChange}
+            onScoreSave={handleScoreSave}
+          />
         </TabsContent>
       </Tabs>
 
