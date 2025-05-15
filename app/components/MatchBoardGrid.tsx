@@ -24,6 +24,7 @@ interface MatchBoardGridProps {
   ) => void;
   onScoreSave?: (match: Match) => void;
   showGroup?: boolean;
+  tournamentName?: string;
 }
 
 export function MatchBoardGrid({
@@ -34,6 +35,7 @@ export function MatchBoardGrid({
   onScoreChange,
   onScoreSave,
   showGroup = false,
+  tournamentName,
 }: MatchBoardGridProps) {
   const [isMobile, setIsMobile] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -131,6 +133,7 @@ export function MatchBoardGrid({
                           onScoreSave={onScoreSave}
                           showGroup={showGroup}
                           compact
+                          tournamentName={tournamentName}
                         />
                       ))
                     )}

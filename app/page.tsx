@@ -53,7 +53,6 @@ import { MatchBoardGrid } from "@/components/MatchBoardGrid";
 import { Match, Tournament } from "@/types/tournament";
 import { useThemeState } from "../components/theme-provider";
 import { DarkModeToggle } from "../components/DarkModeToggle";
-import { Dashboard } from "../components/Dashboard";
 import { DashboardTab } from "../components/DashboardTab";
 import {
   Tooltip,
@@ -1407,7 +1406,6 @@ export default function TournamentScheduler() {
   return (
     <div className="container mx-auto py-4 px-2 sm:px-4 md:px-6 relative">
       <DarkModeToggle />
-
       <h1
         className="text-xl sm:text-2xl md:text-3xl font-bold text-center mb-4 sm:mb-6 cursor-pointer hover:opacity-90 transition-opacity"
         onClick={toggleTheme}
@@ -1416,7 +1414,6 @@ export default function TournamentScheduler() {
       >
         {tournamentName}
       </h1>
-
       <Tabs
         value={activeTab}
         onValueChange={setActiveTab}
@@ -1617,6 +1614,7 @@ export default function TournamentScheduler() {
                   onScoreChange={handleScoreChange}
                   onScoreSave={handleScoreSave}
                   showGroup
+                  tournamentName={tournamentName}
                 />
               ) : (
                 <MatchBoardGrid
@@ -1627,6 +1625,7 @@ export default function TournamentScheduler() {
                   onScoreChange={handleScoreChange}
                   onScoreSave={handleScoreSave}
                   showGroup
+                  tournamentName={tournamentName}
                 />
               )}
               {tournament.matches.filter((m) => !m.completed).length === 0 && (
@@ -1935,6 +1934,7 @@ export default function TournamentScheduler() {
             teamColors={teamColors}
             knockoutMatches={knockoutMatches}
             teamsAdvancing={teamsAdvancing}
+            tournamentName={tournamentName}
             openScoreDialog={openScoreDialog}
             parseTime={parseTime}
             calculateStandings={calculateStandings}
@@ -1943,10 +1943,10 @@ export default function TournamentScheduler() {
             numBoards={numBoards}
             onScoreChange={handleScoreChange}
             onScoreSave={handleScoreSave}
+            onViewChange={setMatchView}
           />
         </TabsContent>
       </Tabs>
-
       {/* Score Dialog */}
       <Dialog
         open={!!selectedMatch}
@@ -2046,7 +2046,6 @@ export default function TournamentScheduler() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
       {/* Team Name Edit Dialog */}
       <Dialog open={showTeamNameDialog} onOpenChange={setShowTeamNameDialog}>
         <DialogContent className="sm:max-w-md">

@@ -12,6 +12,7 @@ interface MatchListProps {
   ) => void;
   onScoreSave?: (match: Match) => void;
   showGroup?: boolean;
+  tournamentName?: string;
 }
 
 export function MatchList({
@@ -21,9 +22,10 @@ export function MatchList({
   onScoreChange,
   onScoreSave,
   showGroup = false,
+  tournamentName,
 }: MatchListProps) {
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-2">
+    <div className="flex flex-col gap-3 w-full max-w-[600px] mx-auto">
       {matches.map((match, index) => (
         <MatchCard
           key={match.id}
@@ -34,6 +36,7 @@ export function MatchList({
           onScoreChange={onScoreChange}
           onScoreSave={onScoreSave}
           showGroup={showGroup}
+          tournamentName={tournamentName}
         />
       ))}
     </div>

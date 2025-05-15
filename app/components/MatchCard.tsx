@@ -30,6 +30,7 @@ interface MatchCardProps {
   onScoreSave?: (match: Match) => void;
   showGroup?: boolean;
   compact?: boolean;
+  tournamentName?: string;
 }
 
 export function MatchCard({
@@ -41,6 +42,7 @@ export function MatchCard({
   onScoreSave,
   showGroup = false,
   compact = false,
+  tournamentName,
 }: MatchCardProps) {
   const [expanded, setExpanded] = useState(false);
   const [localScore1, setLocalScore1] = useState(match.score1 || 0);
