@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { ThemeProvider } from "../components/theme-provider";
+import ClientOnly from "../components/ClientOnly";
+import { InstallPrompt } from "../components/InstallPrompt";
 
 export const metadata: Metadata = {
   title: "Dart Tournament Scheduler",
@@ -36,6 +38,9 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           {children}
+          <ClientOnly>
+            <InstallPrompt />
+          </ClientOnly>
         </ThemeProvider>
       </body>
     </html>
