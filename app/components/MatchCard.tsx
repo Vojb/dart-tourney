@@ -98,6 +98,23 @@ export function MatchCard({
     setExpanded(!expanded);
   };
 
+  // Gradient styles for the color bar
+  const color1 = teamColors[match.team1] || "#ccc";
+  const color2 = teamColors[match.team2] || "#ccc";
+  const gradientStyle = {
+    background: `linear-gradient(135deg, ${color1} 0%, ${color1} 45%, ${color2} 55%, ${color2} 100%)`,
+    height: "6px",
+    width: "100%",
+    borderRadius: "3px",
+    marginBottom: "8px",
+  };
+
+  // Gradient style for the unified scoring box
+  const scoringBoxGradientStyle = {
+    background: `linear-gradient(135deg, ${color1} 0%, ${color1} 45%, ${color2} 55%, ${color2} 100%)`,
+    borderRadius: "6px",
+  };
+
   return (
     <Card className="w-full">
       <CardHeader className="pb-2">
@@ -116,19 +133,16 @@ export function MatchCard({
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {/* Collapsed view - only team names and scores */}
+        {/* Color gradient bar at the top */}
+        <div style={gradientStyle}></div>
+
+        {/* Current scores display */}
         <div
           className="grid grid-cols-[1fr_auto_1fr_auto] items-center cursor-pointer"
           onClick={toggleExpanded}
         >
           {/* Team 1 with fixed width and truncation */}
           <div className="flex items-center space-x-2 min-w-0 pr-2">
-            <div
-              className="min-w-4 w-4 h-4 rounded-full flex-shrink-0"
-              style={{
-                backgroundColor: teamColors[match.team1] || "#ccc",
-              }}
-            />
             <span
               className={`${
                 compact ? "text-xs sm:text-sm" : "text-sm sm:text-base"
@@ -139,11 +153,11 @@ export function MatchCard({
             </span>
           </div>
 
-          {/* Score section with fixed width */}
+          {/* Score section with fixed width - showing local score state */}
           <div className="flex items-center justify-center px-2 w-16">
-            <span className="font-bold">{match.score1 || 0}</span>
+            <span className="font-bold">{localScore1}</span>
             <span className="mx-1">-</span>
-            <span className="font-bold">{match.score2 || 0}</span>
+            <span className="font-bold">{localScore2}</span>
           </div>
 
           {/* Team 2 with fixed width and truncation */}
@@ -156,12 +170,6 @@ export function MatchCard({
             >
               {match.team2}
             </span>
-            <div
-              className="min-w-4 w-4 h-4 rounded-full flex-shrink-0"
-              style={{
-                backgroundColor: teamColors[match.team2] || "#ccc",
-              }}
-            />
           </div>
 
           {/* Toggle icon */}
@@ -177,93 +185,71 @@ export function MatchCard({
         {/* Expanded view - scoring controls */}
         {expanded && (
           <div className="mt-4 space-y-4">
-            {/* Team 1 scoring */}
-            <div className="flex flex-col">
-              <div
-                className="flex items-center justify-between p-3 rounded-md"
-                style={{
-                  backgroundColor: teamColors[match.team1] || "#ccc",
-                  color: getContrastColor(teamColors[match.team1] || "#ccc"),
-                }}
-              >
-                <span
-                  className="font-medium truncate max-w-[50%]"
-                  title={match.team1}
-                >
+            {/* Unified scoring box with gradient */}
+            <div
+              className="p-4 grid grid-cols-2 gap-8"
+              style={scoringBoxGradientStyle}
+            >
+              {/* Team 1 controls */}
+              <div className="flex flex-col items-center space-y-3">
+                <span className="font-medium text-white text-center mb-1">
                   {match.team1}
                 </span>
-                <div className="flex items-center space-x-3">
+                <div className="flex items-center space-x-4">
                   <Button
-                    variant="ghost"
+                    variant="secondary"
                     size="icon"
-                    className="h-7 w-7 text-current hover:bg-black/10"
+                    className="h-9 w-9 bg-white/20 text-white hover:bg-white/30"
                     onClick={(e) => {
                       e.stopPropagation();
                       handleScoreChange("team1", -1);
                     }}
                     disabled={localScore1 <= 0}
                   >
-                    <Minus className="w-4 h-4" />
+                    <Minus className="w-5 h-5" />
                   </Button>
-                  <span className="text-xl font-bold min-w-6 text-center">
-                    {localScore1}
-                  </span>
                   <Button
-                    variant="ghost"
+                    variant="secondary"
                     size="icon"
-                    className="h-7 w-7 text-current hover:bg-black/10"
+                    className="h-9 w-9 bg-white/20 text-white hover:bg-white/30"
                     onClick={(e) => {
                       e.stopPropagation();
                       handleScoreChange("team1", 1);
                     }}
                   >
-                    <Plus className="w-4 h-4" />
+                    <Plus className="w-5 h-5" />
                   </Button>
                 </div>
               </div>
-            </div>
 
-            {/* Team 2 scoring */}
-            <div className="flex flex-col">
-              <div
-                className="flex items-center justify-between p-3 rounded-md"
-                style={{
-                  backgroundColor: teamColors[match.team2] || "#ccc",
-                  color: getContrastColor(teamColors[match.team2] || "#ccc"),
-                }}
-              >
-                <span
-                  className="font-medium truncate max-w-[50%]"
-                  title={match.team2}
-                >
+              {/* Team 2 controls */}
+              <div className="flex flex-col items-center space-y-3">
+                <span className="font-medium text-white text-center mb-1">
                   {match.team2}
                 </span>
-                <div className="flex items-center space-x-3">
+                <div className="flex items-center space-x-4">
                   <Button
-                    variant="ghost"
+                    variant="secondary"
                     size="icon"
-                    className="h-7 w-7 text-current hover:bg-black/10"
+                    className="h-9 w-9 bg-white/20 text-white hover:bg-white/30"
                     onClick={(e) => {
                       e.stopPropagation();
                       handleScoreChange("team2", -1);
                     }}
                     disabled={localScore2 <= 0}
                   >
-                    <Minus className="w-4 h-4" />
+                    <Minus className="w-5 h-5" />
                   </Button>
-                  <span className="text-xl font-bold min-w-6 text-center">
-                    {localScore2}
-                  </span>
                   <Button
-                    variant="ghost"
+                    variant="secondary"
                     size="icon"
-                    className="h-7 w-7 text-current hover:bg-black/10"
+                    className="h-9 w-9 bg-white/20 text-white hover:bg-white/30"
                     onClick={(e) => {
                       e.stopPropagation();
                       handleScoreChange("team2", 1);
                     }}
                   >
-                    <Plus className="w-4 h-4" />
+                    <Plus className="w-5 h-5" />
                   </Button>
                 </div>
               </div>

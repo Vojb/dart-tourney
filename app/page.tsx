@@ -1782,24 +1782,30 @@ export default function TournamentScheduler() {
                                       teamColors[match.team1] || "#ccc",
                                   }}
                                 />
-                                <TooltipProvider>
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <span
-                                        className="text-sm sm:text-base truncate cursor-pointer hover:underline flex items-center gap-1"
-                                        onClick={() =>
-                                          openTeamNameDialog(match.team1)
-                                        }
-                                      >
-                                        {match.team1}
-                                        <Pencil className="w-3 h-3 opacity-50" />
-                                      </span>
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                      <p>Click to edit team name</p>
-                                    </TooltipContent>
-                                  </Tooltip>
-                                </TooltipProvider>
+                                {match.team1.includes("Winner of Match") ? (
+                                  <span className="text-sm sm:text-base text-muted-foreground">
+                                    TBD
+                                  </span>
+                                ) : (
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <span
+                                          className="text-sm sm:text-base truncate cursor-pointer hover:underline flex items-center gap-1"
+                                          onClick={() =>
+                                            openTeamNameDialog(match.team1)
+                                          }
+                                        >
+                                          {match.team1}
+                                          <Pencil className="w-3 h-3 opacity-50" />
+                                        </span>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p>Click to edit team name</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                )}
                               </div>
                               <div className="flex items-center gap-2 mt-2">
                                 <div
@@ -1809,24 +1815,30 @@ export default function TournamentScheduler() {
                                       teamColors[match.team2] || "#ccc",
                                   }}
                                 />
-                                <TooltipProvider>
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <span
-                                        className="text-sm sm:text-base truncate cursor-pointer hover:underline flex items-center gap-1"
-                                        onClick={() =>
-                                          openTeamNameDialog(match.team2)
-                                        }
-                                      >
-                                        {match.team2}
-                                        <Pencil className="w-3 h-3 opacity-50" />
-                                      </span>
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                      <p>Click to edit team name</p>
-                                    </TooltipContent>
-                                  </Tooltip>
-                                </TooltipProvider>
+                                {match.team2.includes("Winner of Match") ? (
+                                  <span className="text-sm sm:text-base text-muted-foreground">
+                                    TBD
+                                  </span>
+                                ) : (
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <span
+                                          className="text-sm sm:text-base truncate cursor-pointer hover:underline flex items-center gap-1"
+                                          onClick={() =>
+                                            openTeamNameDialog(match.team2)
+                                          }
+                                        >
+                                          {match.team2}
+                                          <Pencil className="w-3 h-3 opacity-50" />
+                                        </span>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p>Click to edit team name</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                )}
                               </div>
                             </div>
                             {match.score1 !== null && match.score2 !== null ? (
@@ -1897,14 +1909,24 @@ export default function TournamentScheduler() {
                   className="w-6 h-6 rounded-full shadow-md mb-2"
                   style={{ backgroundColor: teamColors[selectedMatch.team1] }}
                 ></div>
-                <div className="text-center text-sm">{selectedMatch.team1}</div>
-                <Input
-                  type="number"
-                  min="0"
-                  className="mt-2 text-center"
-                  value={score1}
-                  onChange={(e) => setScore1(e.target.value)}
-                />
+                <div className="text-center text-sm">
+                  {selectedMatch.team1.includes("Winner of Match")
+                    ? "TBD"
+                    : selectedMatch.team1}
+                </div>
+                {selectedMatch.team1.includes("Winner of Match") ? (
+                  <div className="mt-2 text-center text-muted-foreground text-sm">
+                    Waiting for results
+                  </div>
+                ) : (
+                  <Input
+                    type="number"
+                    min="0"
+                    className="mt-2 text-center"
+                    value={score1}
+                    onChange={(e) => setScore1(e.target.value)}
+                  />
+                )}
               </div>
 
               <div className="text-center text-xl font-bold">vs</div>
@@ -1914,14 +1936,24 @@ export default function TournamentScheduler() {
                   className="w-6 h-6 rounded-full shadow-md mb-2"
                   style={{ backgroundColor: teamColors[selectedMatch.team2] }}
                 ></div>
-                <div className="text-center text-sm">{selectedMatch.team2}</div>
-                <Input
-                  type="number"
-                  min="0"
-                  className="mt-2 text-center"
-                  value={score2}
-                  onChange={(e) => setScore2(e.target.value)}
-                />
+                <div className="text-center text-sm">
+                  {selectedMatch.team2.includes("Winner of Match")
+                    ? "TBD"
+                    : selectedMatch.team2}
+                </div>
+                {selectedMatch.team2.includes("Winner of Match") ? (
+                  <div className="mt-2 text-center text-muted-foreground text-sm">
+                    Waiting for results
+                  </div>
+                ) : (
+                  <Input
+                    type="number"
+                    min="0"
+                    className="mt-2 text-center"
+                    value={score2}
+                    onChange={(e) => setScore2(e.target.value)}
+                  />
+                )}
               </div>
             </div>
           )}
@@ -1930,7 +1962,18 @@ export default function TournamentScheduler() {
             <Button variant="outline" onClick={() => setSelectedMatch(null)}>
               Cancel
             </Button>
-            <Button onClick={saveScore}>Save Result</Button>
+            <Button
+              onClick={saveScore}
+              disabled={
+                !!(
+                  selectedMatch &&
+                  (selectedMatch.team1.includes("Winner of Match") ||
+                    selectedMatch.team2.includes("Winner of Match"))
+                )
+              }
+            >
+              Save Result
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
