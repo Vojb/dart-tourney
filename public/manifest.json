@@ -1,6 +1,6 @@
 {
-  "name": "Dart Tour",
-  "short_name": "Dart Tour",
+  "name": "Dart Tourney",
+  "short_name": "Dart Tourney",
   "icons": [
     {
       "src": "icons/icon-48x48.png",
@@ -55,6 +55,6 @@
   ],
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#000000",
+  "background_color": "#ffffff",
   "theme_color": "#000000"
 }
