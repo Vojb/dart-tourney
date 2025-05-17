@@ -221,11 +221,14 @@ export function MatchBoardGrid({
   // Desktop grid view
   return (
     <div className="overflow-x-auto">
-      <div className="grid grid-cols-2 gap-4 min-w-[400px]">
+      <div className="flex flex-wrap gap-4">
         {Array.from({ length: numBoards }, (_, boardIdx) => {
           const boardMatches = matches.filter((m) => m.board === boardIdx + 1);
           return (
-            <div key={boardIdx} className="flex flex-col gap-2">
+            <div
+              key={boardIdx}
+              className="flex flex-col gap-2 min-w-[300px] flex-1"
+            >
               <div className="font-semibold text-center mb-2">
                 Board {boardIdx + 1}
               </div>

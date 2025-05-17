@@ -657,7 +657,53 @@ export const useTournamentStore = create<TournamentState>()(
         const { tournament } = get();
         if (!tournament) return;
 
-        // Update the match in the tournament state
+        // Check if this is a knockout match
+        const { knockoutMatches } = get();
+        const isKnockoutMatch = knockoutMatches.some((m) => m.id === match.id);
+
+        if (isKnockoutMatch) {
+          // Handle knockout match save
+          // First check if scores are valid (no ties in knockout matches)
+          if (match.score1 === match.score2) {
+            toast({
+              title: "Invalid score",
+              description:
+                "Knockout matches cannot end in a tie. Please enter different scores.",
+              variant: "destructive",
+            });
+            return;
+          }
+
+          // Determine winner
+          const score1 = match.score1 || 0;
+          const score2 = match.score2 || 0;
+          const winner = score1 > score2 ? match.team1 : match.team2;
+          match.winner = winner;
+
+          // Update the knockout matches array
+          const updatedMatches = knockoutMatches.map((m) =>
+            m.id === match.id ? { ...match, completed: true } : m
+          );
+
+          // Use the utility to update bracket and propagate winner
+          const { updateKnockoutBracket } = require("../utils/tournament");
+          updateKnockoutBracket(updatedMatches, match.id, winner);
+
+          // Update state
+          set({ knockoutMatches: updatedMatches });
+
+          toast({
+            title: "Score updated",
+            description: `${match.team1} ${match.score1 || 0} - ${
+              match.score2 || 0
+            } ${match.team2}`,
+            duration: 2000,
+          });
+
+          return;
+        }
+
+        // Regular group match handling
         const updatedMatches = tournament.matches.map((m) =>
           m.id === match.id ? match : m
         );

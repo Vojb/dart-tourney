@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { Match } from "@/types/tournament";
 import { useState, useEffect, useRef } from "react";
+import { toast } from "../../components/ui/use-toast";
 
 interface MatchCardProps {
   match: Match;
@@ -90,9 +91,31 @@ export function MatchCard({
       // Mark as completed if at least one team has points
       updatedMatch.completed = localScore1 > 0 || localScore2 > 0;
 
+      // For knockout matches (those with nextMatchId), determine and set the winner
+      if (updatedMatch.nextMatchId) {
+        // In knockout matches, we need a winner - can't have a tie
+        if (localScore1 === localScore2) {
+          // If scores are equal, don't save and let user know
+          toast({
+            title: "Invalid score",
+            description:
+              "Knockout matches cannot end in a tie. Please enter different scores.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        // Set the winner based on scores
+        updatedMatch.winner =
+          localScore1 > localScore2 ? updatedMatch.team1 : updatedMatch.team2;
+      }
+
       // Save the updated match
       onScoreSave(updatedMatch);
       setHasChanges(false);
+
+      // Collapse the card after saving
+      setExpanded(false);
     }
   };
 
@@ -151,7 +174,7 @@ export function MatchCard({
               } font-medium truncate`}
               title={match.team1}
             >
-              {match.team1}
+              {match.team1.includes("Winner of Match") ? "TBD" : match.team1}
             </span>
           </div>
 
@@ -170,7 +193,7 @@ export function MatchCard({
               } font-medium truncate text-right`}
               title={match.team2}
             >
-              {match.team2}
+              {match.team2.includes("Winner of Match") ? "TBD" : match.team2}
             </span>
           </div>
 
@@ -195,7 +218,9 @@ export function MatchCard({
               {/* Team 1 controls */}
               <div className="flex flex-col items-center space-y-3">
                 <span className="font-medium text-white text-center mb-1">
-                  {match.team1}
+                  {match.team1.includes("Winner of Match")
+                    ? "TBD"
+                    : match.team1}
                 </span>
                 <div className="flex items-center space-x-4">
                   <Button
@@ -227,7 +252,9 @@ export function MatchCard({
               {/* Team 2 controls */}
               <div className="flex flex-col items-center space-y-3">
                 <span className="font-medium text-white text-center mb-1">
-                  {match.team2}
+                  {match.team2.includes("Winner of Match")
+                    ? "TBD"
+                    : match.team2}
                 </span>
                 <div className="flex items-center space-x-4">
                   <Button

@@ -24,6 +24,12 @@ import {
 import { toast } from "../../components/ui/use-toast";
 import { clearAllData } from "../utils/localStorage";
 import { generateRandomColor } from "../utils/tournament";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "../../components/ui/tooltip";
 
 export function SetupTab() {
   // Settings store
@@ -42,11 +48,17 @@ export function SetupTab() {
     setMatchDuration,
     setStartTime,
     setTeamsAdvancing,
+    setActiveTab,
     resetSettings,
   } = useSettingsStore();
 
   // Tournament store
-  const { generateTournament, reset: resetTournament } = useTournamentStore();
+  const {
+    tournament,
+    knockoutMatches,
+    generateTournament,
+    reset: resetTournament,
+  } = useTournamentStore();
 
   // Teams store
   const {
@@ -64,6 +76,11 @@ export function SetupTab() {
   const resetStandings = useStandingsStore((state) => state.reset);
   const resetDashboard = useDashboardStore((state) => state.reset);
   const resetDialog = useDialogStore((state) => state.resetAllDialogs);
+
+  // Check if tournament already exists
+  const tournamentExists = !!(
+    tournament?.matches?.length || knockoutMatches?.length
+  );
 
   // Initialize team names when component mounts or numTeams changes
   useEffect(() => {
@@ -139,6 +156,9 @@ export function SetupTab() {
         teamColors,
         setTeamColors
       );
+
+      // Navigate to schedule tab after successful tournament generation
+      setActiveTab("schedule");
     } catch (error) {
       console.error("Error generating tournament:", error);
       toast({
@@ -283,9 +303,24 @@ export function SetupTab() {
         </div>
       </CardContent>
       <CardFooter className="flex flex-col sm:flex-row gap-2 sm:gap-4">
-        <Button onClick={handleGenerateTournament} className="w-full sm:w-auto">
-          Generate Tournament
-        </Button>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                onClick={handleGenerateTournament}
+                disabled={tournamentExists}
+                className="w-full sm:w-auto"
+              >
+                Generate Tournament
+              </Button>
+            </TooltipTrigger>
+            {tournamentExists && (
+              <TooltipContent>
+                <p>Reset the tournament first to generate a new one</p>
+              </TooltipContent>
+            )}
+          </Tooltip>
+        </TooltipProvider>
         <Button
           variant="outline"
           onClick={() => {
