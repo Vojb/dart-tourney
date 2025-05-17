@@ -12,48 +12,70 @@ import { Clock, Trophy, Target, Medal } from "lucide-react";
 import { Match, Tournament } from "../app/types/tournament";
 import { MatchList } from "../app/components/MatchList";
 import { MatchBoardGrid } from "../app/components/MatchBoardGrid";
+import { useDashboardStore } from "../app/stores/dashboardStore";
+import { useTournamentStore } from "../app/stores/tournamentStore";
+import { useTeamsStore } from "../app/stores/teamsStore";
+import { useSettingsStore } from "../app/stores/settingsStore";
+import { useScheduleStore } from "../app/stores/scheduleStore";
+import { calculateStandings } from "../app/utils/scoring";
 
 interface DashboardTabProps {
-  tournament: Tournament | null;
-  teamColors: { [key: string]: string };
-  knockoutMatches: Match[];
   teamsAdvancing: number;
   openScoreDialog: (match: Match, isKnockout?: boolean) => void;
   parseTime: (timeString: string) => number;
-  calculateStandings: (groupIndex: number) => any[];
   getKnockoutMatchesByRound: () => { name: string; matches: Match[] }[];
-  matchView: "list" | "boardGrid";
   numBoards: number;
-  tournamentName: string;
-  onScoreChange?: (
-    matchId: string | number,
-    team: "team1" | "team2",
-    change: number
-  ) => void;
-  onScoreSave?: (match: Match) => void;
-  onViewChange?: (view: "list" | "boardGrid") => void;
 }
 
 export function DashboardTab({
-  tournament,
-  teamColors,
-  knockoutMatches,
   teamsAdvancing,
   openScoreDialog,
   parseTime,
-  calculateStandings,
   getKnockoutMatchesByRound,
-  matchView,
   numBoards,
-  tournamentName,
-  onScoreChange,
-  onScoreSave,
-  onViewChange,
 }: DashboardTabProps) {
+  const tournament = useTournamentStore((state) => state.tournament);
+  const knockoutMatches = useTournamentStore((state) => state.knockoutMatches);
+  const createKnockoutStage = useTournamentStore(
+    (state) => state.createKnockoutStage
+  );
+  const teamColors = useTeamsStore((state) => state.teamColors);
+  const startTime = useSettingsStore((state) => state.startTime);
+  const matchDuration = useSettingsStore((state) => state.matchDuration);
+  const tournamentName = useSettingsStore((state) => state.tournamentName);
+  const { scheduleView: matchView, setScheduleView: setMatchView } =
+    useScheduleStore();
+  const { activeTab, setActiveTab } = useDashboardStore();
+  const handleScoreChange = useTournamentStore(
+    (state) => state.handleScoreChange
+  );
+  const handleScoreSave = useTournamentStore((state) => state.handleScoreSave);
+
+  // Calculate standings for a group
+  const calculateStandingsForGroup = (groupIndex: number) => {
+    if (!tournament || !tournament.groups || !tournament.matches) return [];
+
+    if (groupIndex < 0 || groupIndex >= tournament.groups.length) return [];
+
+    const groupTeams = tournament.groups[groupIndex];
+    if (!groupTeams || !Array.isArray(groupTeams) || groupTeams.length === 0)
+      return [];
+
+    const groupMatches = tournament.matches.filter(
+      (m) => m.group === groupIndex + 1
+    );
+    return calculateStandings(groupTeams, groupMatches);
+  };
+
   if (!tournament) {
     return (
-      <div className="py-6 text-center text-muted-foreground">
-        Generate a tournament to see the dashboard
+      <div className="text-center p-6 bg-muted/30 rounded-lg">
+        <h3 className="text-lg font-medium mb-1">
+          No tournament data available
+        </h3>
+        <p className="text-muted-foreground">
+          Generate a tournament to see the dashboard.
+        </p>
       </div>
     );
   }
@@ -106,7 +128,7 @@ export function DashboardTab({
                       </tr>
                     </thead>
                     <tbody>
-                      {calculateStandings(groupIndex)
+                      {calculateStandingsForGroup(groupIndex)
                         .sort((a, b) => {
                           if (a.points !== b.points) return b.points - a.points;
                           return b.legDiff - a.legDiff;
@@ -143,13 +165,12 @@ export function DashboardTab({
                               </td>
                               <td className="text-center py-1">{team.won}</td>
                               <td className="text-center py-1">{team.lost}</td>
-                              <td className="text-center py-1 font-medium">
+                              <td className="text-center py-1 font-semibold">
                                 {team.points}
                               </td>
                               <td className="text-center py-1">
-                                {team.legDiff > 0
-                                  ? `+${team.legDiff}`
-                                  : team.legDiff}
+                                {team.legDiff > 0 && "+"}
+                                {team.legDiff}
                               </td>
                             </tr>
                           );
@@ -161,6 +182,37 @@ export function DashboardTab({
             ))}
           </div>
         </CardContent>
+        {tournament &&
+          tournament.matches &&
+          tournament.matches.length > 0 &&
+          tournament.matches.every((m) => m.completed) &&
+          knockoutMatches.length === 0 && (
+            <div className="flex justify-center pb-4">
+              <Button
+                onClick={() =>
+                  createKnockoutStage(
+                    numBoards,
+                    teamsAdvancing,
+                    startTime,
+                    matchDuration,
+                    teamColors,
+                    (tab: string) =>
+                      setActiveTab(
+                        tab as
+                          | "teams"
+                          | "groups"
+                          | "schedule"
+                          | "results"
+                          | "standings"
+                          | "finals"
+                      )
+                  )
+                }
+              >
+                Start Finals
+              </Button>
+            </div>
+          )}
       </Card>
 
       {/* Upcoming Matches */}
@@ -182,7 +234,7 @@ export function DashboardTab({
               <Button
                 variant={matchView === "list" ? "default" : "outline"}
                 size="sm"
-                onClick={() => onViewChange && onViewChange("list")}
+                onClick={() => setMatchView("list")}
                 className="h-6 md:h-7 text-xs px-1.5 md:px-2"
               >
                 List
@@ -190,7 +242,7 @@ export function DashboardTab({
               <Button
                 variant={matchView === "boardGrid" ? "default" : "outline"}
                 size="sm"
-                onClick={() => onViewChange && onViewChange("boardGrid")}
+                onClick={() => setMatchView("boardGrid")}
                 className="h-6 md:h-7 text-xs px-1.5 md:px-2"
               >
                 Board Grid
@@ -211,8 +263,8 @@ export function DashboardTab({
                     matches={upcomingMatches}
                     teamColors={teamColors}
                     onScoreClick={openScoreDialog}
-                    onScoreChange={onScoreChange}
-                    onScoreSave={onScoreSave}
+                    onScoreChange={handleScoreChange}
+                    onScoreSave={handleScoreSave}
                     showGroup
                   />
                 ) : (
@@ -221,8 +273,8 @@ export function DashboardTab({
                     numBoards={numBoards}
                     teamColors={teamColors}
                     onScoreClick={openScoreDialog}
-                    onScoreChange={onScoreChange}
-                    onScoreSave={onScoreSave}
+                    onScoreChange={handleScoreChange}
+                    onScoreSave={handleScoreSave}
                     showGroup
                   />
                 )
@@ -248,62 +300,61 @@ export function DashboardTab({
           <CardContent className="p-2 sm:p-3 md:p-4">
             <div className="max-h-[200px] md:max-h-[250px] overflow-auto pr-2 md:pr-4">
               <div className="flex flex-wrap gap-3 md:gap-4">
-                {getKnockoutMatchesByRound().map((round) => (
+                {getKnockoutMatchesByRound().map((round, roundIndex) => (
                   <div
-                    key={round.name}
+                    key={roundIndex}
                     className="border rounded-lg p-2 md:p-3 bg-card flex-1 min-w-[250px] sm:min-w-[280px]"
                   >
-                    <h3 className="text-sm md:text-base lg:text-lg font-medium mb-1 md:mb-2">
-                      {round.name}
-                    </h3>
-                    <div className="space-y-1 md:space-y-2">
-                      {round.matches.map((match) => (
+                    <h3 className="text-sm font-medium mb-2">{round.name}</h3>
+                    <div className="space-y-2">
+                      {round.matches.map((match, matchIndex) => (
                         <div
-                          key={match.id}
-                          className="flex justify-between items-center p-1.5 md:p-2 rounded-md border"
+                          key={matchIndex}
+                          className="flex justify-between items-center p-2 bg-muted/40 rounded"
                         >
-                          <div className="flex-1 min-w-0">
-                            <div className="text-[10px] md:text-xs text-muted-foreground mb-0.5 md:mb-1">
-                              {match.time}
-                            </div>
-                            <div className="flex items-center space-x-1">
+                          <div className="space-y-1">
+                            <div className="flex items-center">
                               <div
-                                className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full"
+                                className="w-2 h-2 md:w-3 md:h-3 rounded-full mr-1"
                                 style={{
-                                  backgroundColor: teamColors[match.team1],
+                                  backgroundColor:
+                                    teamColors[match.team1] || "#ccc",
                                 }}
                               ></div>
-                              <span className="text-[10px] md:text-xs lg:text-sm truncate max-w-[120px] md:max-w-[150px]">
+                              <span className="text-xs truncate max-w-[100px]">
                                 {match.team1.includes("Winner of Match")
                                   ? "TBD"
                                   : match.team1}
                               </span>
                             </div>
-                            <div className="flex items-center space-x-1 mt-0.5 md:mt-1">
+                            <div className="flex items-center">
                               <div
-                                className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full"
+                                className="w-2 h-2 md:w-3 md:h-3 rounded-full mr-1"
                                 style={{
-                                  backgroundColor: teamColors[match.team2],
+                                  backgroundColor:
+                                    teamColors[match.team2] || "#ccc",
                                 }}
                               ></div>
-                              <span className="text-[10px] md:text-xs lg:text-sm truncate max-w-[120px] md:max-w-[150px]">
+                              <span className="text-xs truncate max-w-[100px]">
                                 {match.team2.includes("Winner of Match")
                                   ? "TBD"
                                   : match.team2}
                               </span>
                             </div>
                           </div>
-                          {match.completed ? (
-                            <div className="text-[10px] md:text-xs lg:text-sm font-medium">
+                          {match.score1 !== null && match.score2 !== null ? (
+                            <div className="text-sm font-medium">
                               {match.score1}-{match.score2}
                             </div>
                           ) : (
-                            <Badge
+                            <Button
+                              size="sm"
                               variant="outline"
-                              className="text-[10px] md:text-xs px-1.5 py-0.5"
+                              className="h-6 text-xs px-2"
+                              onClick={() => openScoreDialog(match, true)}
                             >
-                              Upcoming
-                            </Badge>
+                              Score
+                            </Button>
                           )}
                         </div>
                       ))}
